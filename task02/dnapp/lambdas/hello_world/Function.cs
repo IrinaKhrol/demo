@@ -11,8 +11,8 @@ namespace SimpleLambdaFunction
 
     public class HelloResponse
     {
-        public int StatusCode { get; set; }
-        public string Message { get; set; } = string.Empty;
+        public int statusCode { get; set; }
+        public string message { get; set; } = string.Empty;
 
     }
 
@@ -25,8 +25,13 @@ namespace SimpleLambdaFunction
             {
                 var response = new HelloResponse
                 {
-                    StatusCode = 200,
-                    Message = "Hello from Lambda"
+                    statusCode = 200,
+                    message = "Hello from Lambda"
+                };
+
+                var options = new JsonSerializerOptions
+                {
+                   PropertyNamingPolicy = JsonNamingPolicy.CamelCase
                 };
 
                 return new APIGatewayHttpApiV2ProxyResponse
