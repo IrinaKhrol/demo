@@ -33,7 +33,7 @@
       "/events": {
         "POST": {
           "authorization_type": "NONE",
-          "integration_type": "AWS_PROXY",
+          "integration_type": "lambda",
           "api_key_required": false,
           "method_request_parameters": {},
           "integration_request_body_template": {},
