@@ -42,7 +42,6 @@
           "default_error_pattern": true,
           "method_request_models": {},
           "request_validator": {},
-          "uri": "arn:aws:apigateway:eu-central-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-central-1:905418349556:function:api_handler/invocations",
           "lambda_name": "api_handler",
           "lambda_region": "eu-central-1",
           "enable_proxy": true,
