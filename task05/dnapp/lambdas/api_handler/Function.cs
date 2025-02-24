@@ -22,7 +22,7 @@ namespace SimpleLambdaFunction
        {
            this._dynamoDb = new AmazonDynamoDBClient();
            this._tableName = Environment.GetEnvironmentVariable("TARGET_TABLE") 
-               ?? throw new InvalidOperationException(" TARGET_TABLE is not set");
+               ?? throw new InvalidOperationException("TARGET_TABLE is not set");
        }
 
        public async Task<APIGatewayProxyResponse> FunctionHandler(APIGatewayProxyRequest request, ILambdaContext context)
@@ -40,7 +40,7 @@ namespace SimpleLambdaFunction
                    return new APIGatewayProxyResponse
                    {
                        StatusCode = (int)HttpStatusCode.BadRequest,
-                       Body = JsonSerializer.Serialize(new { error = " " })
+                       Body = JsonSerializer.Serialize(new { error = "Invalid request body" })
                    };
                }
 
@@ -69,20 +69,18 @@ namespace SimpleLambdaFunction
                return new APIGatewayProxyResponse
                {
                    StatusCode = (int)HttpStatusCode.Created,
-                   Body = JsonSerializer.Serialize(new
-                   {
-                       statusCode = 201,
-                       @event = newEvent
-                   })
+                   Body = JsonSerializer.Serialize(newEvent),
+                   Headers = new Dictionary<string, string> { { "Content-Type", "application/json" } }
                };
            }
            catch (Exception ex)
            {
-               context.Logger.LogLine($"Ошибка: {ex.Message}");
+               context.Logger.LogLine($"Error: {ex.Message}");
                return new APIGatewayProxyResponse
                {
                    StatusCode = (int)HttpStatusCode.InternalServerError,
-                   Body = JsonSerializer.Serialize(new { error = ex.Message })
+                   Body = JsonSerializer.Serialize(new { error = ex.Message }),
+                   Headers = new Dictionary<string, string> { { "Content-Type", "application/json" } }
                };
            }
            finally
