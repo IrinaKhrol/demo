@@ -1,0 +1,80 @@
+{
+  "lambda-basic-execution": {
+    "policy_content": {
+      "Statement": [
+        {
+          "Action": [
+            "logs:CreateLogGroup",
+            "logs:CreateLogStream",
+            "logs:PutLogEvents",
+            "dynamodb:GetItem",
+            "dynamodb:Query",
+            "dynamodb:PutItem",
+            "dynamodb:Batch*",
+            "dynamodb:DeleteItem",
+            "ssm:PutParameter",
+            "ssm:GetParameter",
+            "kms:Decrypt"
+          ],
+          "Effect": "Allow",
+          "Resource": "*"
+        }
+      ],
+      "Version": "2012-10-17"
+    },
+    "resource_type": "iam_policy",
+    "tags": {}
+  },
+  "task5_api": {
+    "resource_type": "api_gateway",
+    "deploy_stage": "api",
+    "dependencies": [],
+    "resources": {
+      "/events": {
+        "POST": {
+          "authorization_type": "NONE",
+          "integration_type": "AWS_PROXY",
+          "api_key_required": false,
+          "method_request_parameters": {},
+          "integration_request_body_template": {},
+          "responses": [],
+          "integration_responses": [],
+          "default_error_pattern": true,
+          "method_request_models": {},
+          "request_validator": {},
+          "uri": "arn:aws:apigateway:eu-central-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-central-1:905418349556:function:api_handler/invocations",
+          "lambda_name": "api_handler",
+          "lambda_region": "eu-central-1",
+          "enable_proxy": true,
+          "cache_configuration": {
+            "cache_ttl_sec": 300,
+            "encrypt_cache_data": true
+          },
+          "throttling_configuration": {
+            "throttling_enabled": true,
+            "throttling_rate_limit": 1000.0,
+            "throttling_burst_limit": 500
+          },
+          "logging_configuration": {
+            "logging_enabled": true,
+            "log_level": "INFO",
+            "data_tracing": true,
+            "detailed_metrics": true
+          },
+          "binary_media_types": []
+        }
+      }
+    },
+    "tags": {}
+  },
+  "Events": {
+    "resource_type": "dynamodb_table",
+    "hash_key_name": "id",
+    "hash_key_type": "S",
+    "read_capacity": 1,
+    "write_capacity": 1,
+    "global_indexes": [],
+    "autoscaling": [],
+    "tags": {}
+  }
+}
