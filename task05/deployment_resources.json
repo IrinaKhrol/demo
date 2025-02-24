@@ -14,7 +14,8 @@
             "dynamodb:DeleteItem",
             "ssm:PutParameter",
             "ssm:GetParameter",
-            "kms:Decrypt"
+            "kms:Decrypt",
+            "lambda:InvokeFunction"
           ],
           "Effect": "Allow",
           "Resource": "*"
@@ -28,50 +29,27 @@
   "task5_api": {
     "resource_type": "api_gateway",
     "deploy_stage": "api",
-    "dependencies": [
-      {
-        "resource_name": "api_handler",
-        "resource_type": "lambda"
-      }
-    ],
+    "dependencies": [],
     "resources": {
       "/events": {
+        "enable_cors": false,
         "POST": {
           "authorization_type": "NONE",
           "integration_type": "lambda",
+          "lambda_name": "api_handler",
           "api_key_required": false,
           "method_request_parameters": {},
           "integration_request_body_template": {},
           "responses": [],
-          "integration_responses": [],
-          "default_error_pattern": true,
-          "method_request_models": {},
-          "request_validator": {},
-          "lambda_name": "api_handler",
-          "lambda_region": "eu-central-1",
           "enable_proxy": true,
-          "cache_configuration": {
-            "cache_ttl_sec": 300,
-            "encrypt_cache_data": true
-          },
-          "throttling_configuration": {
-            "throttling_enabled": true,
-            "throttling_rate_limit": 1000.0,
-            "throttling_burst_limit": 500
-          },
-          "logging_configuration": {
-            "logging_enabled": true,
-            "log_level": "INFO",
-            "data_tracing": true,
-            "detailed_metrics": true
-          },
-          "binary_media_types": []
+          "integration_responses": [],
+          "default_error_pattern": true
         }
       }
     },
     "tags": {}
   },
-  "Events": {
+  "${target_table}": {
     "resource_type": "dynamodb_table",
     "hash_key_name": "id",
     "hash_key_type": "S",
@@ -81,4 +59,4 @@
     "autoscaling": [],
     "tags": {}
   }
-}
+ }
