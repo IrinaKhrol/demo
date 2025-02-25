@@ -26,116 +26,111 @@ namespace SimpleLambdaFunction
 
         public async Task<APIGatewayProxyResponse> FunctionHandler(APIGatewayProxyRequest request, ILambdaContext context)
         {
-            context.Logger.LogLine($"Received event: {JsonSerializer.Serialize(request, new JsonSerializerOptions { WriteIndented = true })}");
+            context.Logger.LogLine($"AwsRequestId: {context.AwsRequestId}");
+            context.Logger.LogLine($"Table name: {_tableName}");
+            context.Logger.LogLine($"Request body: {request.Body}");
+
+            using var cts = new CancellationTokenSource();
+            cts.CancelAfter(context.RemainingTime.Add(TimeSpan.FromSeconds(-1)));
 
             try
             {
-                // Извлекаем principalId и content из запроса
-                var requestBody = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(request.Body);
-                
-                if (!requestBody.TryGetValue("principalId", out JsonElement principalIdElement) ||
-                    principalIdElement.ValueKind == JsonValueKind.Undefined ||
-                    principalIdElement.ValueKind == JsonValueKind.Null ||
-                    !principalIdElement.TryGetInt32(out int principalId))
+                var jsonOptions = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+
+                var responseJsonOptions = new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                };
+
+                var requestBody = JsonSerializer.Deserialize<RequestBody>(request.Body, jsonOptions);
+                context.Logger.LogLine($"Deserialized request: PrincipalId={requestBody?.PrincipalId}, Content={requestBody?.Content != null}");
+
+                if (requestBody?.PrincipalId <= 0 || requestBody.Content == null)
                 {
                     return new APIGatewayProxyResponse
                     {
-                        StatusCode = 400,
+                        StatusCode = (int)HttpStatusCode.BadRequest,
                         Body = JsonSerializer.Serialize(new
                         {
-                            error = "principalId must be a valid number"
-                        }),
+                            statusCode = 400,
+                            error = "Invalid request body"
+                        }, responseJsonOptions),
                         Headers = new Dictionary<string, string> { { "Content-Type", "application/json" } }
                     };
                 }
 
-                if (!requestBody.TryGetValue("content", out JsonElement contentElement) ||
-                    contentElement.ValueKind == JsonValueKind.Undefined ||
-                    contentElement.ValueKind == JsonValueKind.Null)
-                {
-                    return new APIGatewayProxyResponse
-                    {
-                        StatusCode = 400,
-                        Body = JsonSerializer.Serialize(new
-                        {
-                            error = "content is required"
-                        }),
-                        Headers = new Dictionary<string, string> { { "Content-Type", "application/json" } }
-                    };
-                }
-
-                // Преобразуем content в Dictionary<string, string>
-                Dictionary<string, string> content;
-                try 
-                {
-                    content = JsonSerializer.Deserialize<Dictionary<string, string>>(
-                        contentElement.GetRawText(), 
-                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
-                    );
-                }
-                catch (JsonException)
-                {
-                    return new APIGatewayProxyResponse
-                    {
-                        StatusCode = 400,
-                        Body = JsonSerializer.Serialize(new
-                        {
-                            error = "content must be a valid object"
-                        }),
-                        Headers = new Dictionary<string, string> { { "Content-Type", "application/json" } }
-                    };
-                }
-
-                // Создаем запись для DynamoDB
                 var id = Guid.NewGuid().ToString();
                 var createdAt = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
 
-                var table = Table.LoadTable(_dynamoDb, _tableName);
-                var document = new Document
+                var newEvent = new
                 {
-                    ["id"] = id,
-                    ["principalId"] = principalId,
-                    ["createdAt"] = createdAt,
-                    ["body"] = JsonSerializer.Serialize(content)
+                    id = id,
+                    principalId = requestBody.PrincipalId,
+                    createdAt = createdAt,
+                    body = requestBody.Content
                 };
 
-                context.Logger.LogLine($"Saving document: {JsonSerializer.Serialize(document)}");
-                await table.PutItemAsync(document);
-                
+                context.Logger.LogLine($"Created event: id={id}, principalId={requestBody.PrincipalId}, createdAt={createdAt}");
+
+                var table = Table.LoadTable(_dynamoDb, _tableName);
+                var document = new Document();
+                document["id"] = id;
+                document["principalId"] = requestBody.PrincipalId;
+                document["createdAt"] = createdAt;
+
+                var bodyJson = JsonSerializer.Serialize(requestBody.Content, responseJsonOptions);
+                context.Logger.LogLine($"Body JSON: {bodyJson}");
+                document["body"] = Document.FromJson(bodyJson);
+
+                context.Logger.LogLine("Putting item into DynamoDB...");
+                await table.PutItemAsync(document, cts.Token);
+                context.Logger.LogLine("Item successfully put into DynamoDB");
+
+                var response = new
+                {
+                    statusCode = 201,
+                    @event = newEvent
+                };
+
+                var responseJson = JsonSerializer.Serialize(response, responseJsonOptions);
+                context.Logger.LogLine($"Response JSON: {responseJson}");
+
                 return new APIGatewayProxyResponse
                 {
-                    StatusCode = 201,
-                    Body = JsonSerializer.Serialize(new
-                    {
-                        statusCode = 201,
-                        message = "Event created successfully",
-                        @event = new
-                        {
-                            id,
-                            principalId,
-                            createdAt,
-                            body = content
-                        }
-                    }),
+                    StatusCode = (int)HttpStatusCode.Created,
+                    Body = responseJson,
                     Headers = new Dictionary<string, string> { { "Content-Type", "application/json" } }
                 };
             }
             catch (Exception ex)
             {
                 context.Logger.LogLine($"Error: {ex.Message}");
-                context.Logger.LogLine($"Stack trace: {ex.StackTrace}");
+                context.Logger.LogLine($"Stack Trace: {ex.StackTrace}");
                 
                 return new APIGatewayProxyResponse
                 {
-                    StatusCode = 500,
+                    StatusCode = (int)HttpStatusCode.InternalServerError,
                     Body = JsonSerializer.Serialize(new
                     {
-                        error = "Internal server error",
-                        message = ex.Message
+                        statusCode = 500,
+                        error = ex.Message
                     }),
                     Headers = new Dictionary<string, string> { { "Content-Type", "application/json" } }
                 };
             }
+            finally
+            {
+                cts.Dispose();
+            }
+        }
+
+        public class RequestBody
+        {
+            public int PrincipalId { get; set; }
+            public Dictionary<string, string> Content { get; set; } = new Dictionary<string, string>();
         }
     }
 }
