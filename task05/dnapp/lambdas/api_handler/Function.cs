@@ -100,7 +100,7 @@ namespace SimpleLambdaFunction
 
                 return new APIGatewayProxyResponse
                 {
-                    StatusCode = (int)HttpStatusCode.Created,
+                    StatusCode = 201, 
                     Body = responseJson,
                     Headers = new Dictionary<string, string> { { "Content-Type", "application/json" } }
                 };
