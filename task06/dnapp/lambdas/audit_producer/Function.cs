@@ -5,6 +5,7 @@ using Amazon.DynamoDBv2.Model;
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
+using System.Threading.Tasks;
 
 [assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
 
@@ -18,10 +19,11 @@ namespace SimpleLambdaFunction
         public Function()
         {
             _dynamoDbClient = new AmazonDynamoDBClient();
-            _auditTableName = Environment.GetEnvironmentVariable("TARGET_TABLE") ?? "Audit";
+
+            _auditTableName = Environment.GetEnvironmentVariable("table_name") ?? "Audit";
         }
 
-        public void FunctionHandler(DynamoDBEvent dynamoEvent, ILambdaContext context)
+        public async Task FunctionHandler(DynamoDBEvent dynamoEvent, ILambdaContext context)
         {
             context.Logger.LogLine($"Processing {dynamoEvent.Records.Count} records...");
 
@@ -31,11 +33,11 @@ namespace SimpleLambdaFunction
                 {
                     if (record.EventName == "INSERT")
                     {
-                        HandleInsert(record, context);
+                        await HandleInsert(record, context);
                     }
                     else if (record.EventName == "MODIFY")
                     {
-                        HandleModify(record, context);
+                        await HandleModify(record, context);
                     }
                 }
                 catch (Exception ex)
@@ -45,9 +47,10 @@ namespace SimpleLambdaFunction
             }
         }
 
-        private void HandleInsert(DynamoDBEvent.DynamodbStreamRecord record, ILambdaContext context)
+        private async Task HandleInsert(DynamoDBEvent.DynamodbStreamRecord record, ILambdaContext context)
         {
             var newImage = record.Dynamodb.NewImage;
+
             var auditItem = new Dictionary<string, AttributeValue>
             {
                 { "id", new AttributeValue { S = Guid.NewGuid().ToString() } },
@@ -59,14 +62,14 @@ namespace SimpleLambdaFunction
                 })} }
             };
 
-            PutItemInAuditTable(auditItem, context);
+            await PutItemInAuditTable(auditItem, context);
         }
 
-        private void HandleModify(DynamoDBEvent.DynamodbStreamRecord record, ILambdaContext context)
+        private async Task HandleModify(DynamoDBEvent.DynamodbStreamRecord record, ILambdaContext context)
         {
             var oldImage = record.Dynamodb.OldImage;
             var newImage = record.Dynamodb.NewImage;
-            
+
             var oldValue = int.Parse(oldImage["value"].N);
             var newValue = int.Parse(newImage["value"].N);
 
@@ -80,10 +83,10 @@ namespace SimpleLambdaFunction
                 { "newValue", new AttributeValue { N = newValue.ToString() } }
             };
 
-            PutItemInAuditTable(auditItem, context);
+            await PutItemInAuditTable(auditItem, context);
         }
 
-        private void PutItemInAuditTable(Dictionary<string, AttributeValue> auditItem, ILambdaContext context)
+        private async Task PutItemInAuditTable(Dictionary<string, AttributeValue> auditItem, ILambdaContext context)
         {
             var putRequest = new PutItemRequest
             {
@@ -93,12 +96,12 @@ namespace SimpleLambdaFunction
 
             try
             {
-                _dynamoDbClient.PutItemAsync(putRequest).Wait();
+                await _dynamoDbClient.PutItemAsync(putRequest);
                 context.Logger.LogLine($"Created audit entry in table {_auditTableName}");
             }
             catch (Exception ex)
             {
-                context.Logger.LogLine($"Error creating audit entry: {ex.Message}");
+                context.Logger.LogLine($"Error creating audit entry in table {_auditTableName}: {ex.Message}");
             }
         }
     }
