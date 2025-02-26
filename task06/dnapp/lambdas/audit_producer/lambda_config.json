@@ -11,14 +11,14 @@
   "dependencies": [],
   "event_sources": [
     {
-      "resource_type": "dynamodb_stream",
-      "resource_name": "Configuration", 
-      "batch_size": 1,
-      "starting_position": "LATEST"
+      "resource_type": "dynamodb_trigger",
+      "target_table": "Configuration", 
+      "batch_size": 123,
+      "function_response_types": ["ReportBatchItemFailures"]
     }
   ],
   "env_variables": {
-      "TARGET_TABLE": "${target_table}"
+      "table_name": "${target_table}"
   },
   "publish_version": true,
   "alias": "${lambdas_alias_name}",
