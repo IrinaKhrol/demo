@@ -81,19 +81,12 @@ namespace SimpleLambdaFunction
                 { "id", new AttributeValue { S = Guid.NewGuid().ToString() } },
                 { "itemKey", new AttributeValue { S = newImage["key"].S } },
                 { "modificationTime", new AttributeValue { S = formattedTime } },
-                { "item", new AttributeValue
+                { "newValue", new AttributeValue
                     { 
                         M = new Dictionary<string, AttributeValue>
                         {
-                            { "newValue", new AttributeValue 
-                                { 
-                                    M = new Dictionary<string, AttributeValue>
-                                    {
-                                        { "key", new AttributeValue { S = newImage["key"].S } },
-                                        { "value", new AttributeValue { N = newImage["value"].N } }
-                                    }
-                                } 
-                            }
+                            { "key", new AttributeValue { S = newImage["key"].S } },
+                            { "value", new AttributeValue { N = newImage["value"].N } }
                         }
                     } 
                 }
@@ -129,19 +122,12 @@ namespace SimpleLambdaFunction
                 { "modificationTime", new AttributeValue { S = formattedTime } },
                 { "updatedAttribute", new AttributeValue { S = "value" } },
                 { "oldValue", new AttributeValue { N = oldValue.ToString() } },
-                { "item", new AttributeValue 
+                { "newValue", new AttributeValue 
                     { 
                         M = new Dictionary<string, AttributeValue>
                         {
-                            { "newValue", new AttributeValue 
-                                { 
-                                    M = new Dictionary<string, AttributeValue>
-                                    {
-                                        { "key", new AttributeValue { S = newImage["key"].S } },
-                                        { "value", new AttributeValue { N = newValue.ToString() } }
-                                    }
-                                } 
-                            }
+                            { "key", new AttributeValue { S = newImage["key"].S } },
+                            { "value", new AttributeValue { N = newValue.ToString() } }
                         }
                     } 
                 }
