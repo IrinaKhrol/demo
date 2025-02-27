@@ -4,8 +4,8 @@
 type Event {
   id: ID!
   userId: Int!
-  createdAt: AWSDateTime!
-  payLoad: AWSJSON!
+  createdAt: String!
+  payLoad: PayLoad!
 }
 
 type Query {
