@@ -4,7 +4,6 @@ using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
 using System;
 using System.Collections.Generic;
-using System.Text.Json;
 using System.Threading.Tasks;
 
 [assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
@@ -24,11 +23,6 @@ namespace SimpleLambdaFunction
             if (string.IsNullOrEmpty(tableName))
             {
                 throw new Exception("table_name environment variable is not set");
-            }
-            
-            if (tableName.EndsWith("Audit") || tableName.EndsWith("Audit-l6w7") || !tableName.Contains("-5szg"))
-            {
-                tableName = "cmtr-f8b18fcb-Audit-5szg";
             }
             
             _auditTableName = tableName;
@@ -53,6 +47,10 @@ namespace SimpleLambdaFunction
                     {
                         await HandleModify(record, context);
                     }
+                    else
+                    {
+                        context.Logger.LogLine($"Unsupported event type: {record.EventName}");
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -71,12 +69,19 @@ namespace SimpleLambdaFunction
             modificationTime = modificationTime.AddTicks(-(modificationTime.Ticks % TimeSpan.TicksPerMillisecond));
             var formattedTime = modificationTime.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
 
+            // Ensure required fields exist
+            if (!newImage.ContainsKey("key") || !newImage.ContainsKey("value"))
+            {
+                context.Logger.LogLine("Error: Missing required fields in record.");
+                return;
+            }
+
             var auditItem = new Dictionary<string, AttributeValue>
             {
                 { "id", new AttributeValue { S = Guid.NewGuid().ToString() } },
                 { "itemKey", new AttributeValue { S = newImage["key"].S } },
                 { "modificationTime", new AttributeValue { S = formattedTime } },
-                { "item", new AttributeValue 
+                { "item", new AttributeValue
                     { 
                         M = new Dictionary<string, AttributeValue>
                         {
@@ -102,6 +107,13 @@ namespace SimpleLambdaFunction
             var oldImage = record.Dynamodb.OldImage;
             var newImage = record.Dynamodb.NewImage;
             context.Logger.LogLine($"Handling MODIFY for record with key: {newImage["key"].S}");
+
+            // Ensure required fields exist
+            if (!oldImage.ContainsKey("value") || !newImage.ContainsKey("value"))
+            {
+                context.Logger.LogLine("Error: Missing 'value' field in record.");
+                return;
+            }
 
             var oldValue = int.Parse(oldImage["value"].N);
             var newValue = int.Parse(newImage["value"].N);
