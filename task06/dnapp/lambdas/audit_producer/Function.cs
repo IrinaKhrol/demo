@@ -30,6 +30,10 @@ namespace SimpleLambdaFunction
             {
                 try
                 {
+                    context.Logger.LogLine($"EventName: {record.EventName}, EventSource: {record.EventSource}");
+                    context.Logger.LogLine($"DynamoDB keys: {JsonSerializer.Serialize(record.Dynamodb.Keys)}");
+                    context.Logger.LogLine($"DynamoDB NewImage: {JsonSerializer.Serialize(record.Dynamodb.NewImage)}");
+                    
                     if (record.EventName == "INSERT")
                     {
                         await HandleInsert(record, context);
@@ -42,6 +46,7 @@ namespace SimpleLambdaFunction
                 catch (Exception ex)
                 {
                     context.Logger.LogLine($"Error processing record: {ex.Message}");
+                    context.Logger.LogLine($"Stack trace: {ex.StackTrace}");
                 }
             }
         }
@@ -71,6 +76,8 @@ namespace SimpleLambdaFunction
             };
 
             await PutItemInAuditTable(auditItem, context);
+            
+            context.Logger.LogLine($"Audit item created: {JsonSerializer.Serialize(auditItem)}");
         }
 
         private async Task HandleModify(DynamoDBEvent.DynamodbStreamRecord record, ILambdaContext context)
@@ -104,6 +111,8 @@ namespace SimpleLambdaFunction
             };
 
             await PutItemInAuditTable(auditItem, context);
+            
+            context.Logger.LogLine($"Audit item updated: {JsonSerializer.Serialize(auditItem)}");
         }
 
         private async Task PutItemInAuditTable(Dictionary<string, AttributeValue> auditItem, ILambdaContext context)
@@ -122,6 +131,7 @@ namespace SimpleLambdaFunction
             catch (Exception ex)
             {
                 context.Logger.LogLine($"Error creating audit entry in table {_auditTableName}: {ex.Message}");
+                context.Logger.LogLine($"Stack trace: {ex.StackTrace}");
             }
         }
     }
