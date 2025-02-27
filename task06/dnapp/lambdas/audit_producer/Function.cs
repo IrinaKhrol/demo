@@ -85,7 +85,7 @@ namespace SimpleLambdaFunction
                         M = new Dictionary<string, AttributeValue>
                         {
                             { "key", new AttributeValue { S = newImage["key"].S } },
-                            { "value", new AttributeValue { N = Convert.ToInt32(newImage["value"].N).ToString() }}
+                             { "value", new AttributeValue { N = Convert.ToInt32(newImage["value"].N).ToString() } }
                         }
                     } 
                 }
@@ -114,23 +114,14 @@ namespace SimpleLambdaFunction
             modificationTime = modificationTime.AddTicks(-(modificationTime.Ticks % TimeSpan.TicksPerMillisecond));
             var formattedTime = modificationTime.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
 
-            var auditItem = new Dictionary<string, AttributeValue>
-            {
-                { "id", new AttributeValue { S = Guid.NewGuid().ToString() } },
-                { "itemKey", new AttributeValue { S = newImage["key"].S } },
-                { "modificationTime", new AttributeValue { S = formattedTime } },
-                { "updatedAttribute", new AttributeValue { S = "value" } },
-                { "oldValue", new AttributeValue { N = oldValue.ToString() } },
-                { "newValue", new AttributeValue 
-                    { 
-                        M = new Dictionary<string, AttributeValue>
-                        {
-                            { "key", new AttributeValue { S = newImage["key"].S } },
-                            { "value", new AttributeValue { N = newValue.ToString() } }
-                        }
-                    } 
-                }
-            };
+            var auditItem = new Dictionary<string, AttributeValue>{    
+                { "id", new AttributeValue { S = Guid.NewGuid().ToString() } },        
+                { "itemKey", new AttributeValue { S = newImage["key"].S } },        
+                { "modificationTime", new AttributeValue { S = formattedTime } },        
+                { "updatedAttribute", new AttributeValue { S = "value" } },        
+                { "oldValue", new AttributeValue { N = oldValue.ToString() } },        
+                { "newValue", new AttributeValue  { N = Convert.ToInt32(newImage["value"].N).ToString() } }};
+ 
 
             await PutItemInAuditTable(auditItem, context);
         }
