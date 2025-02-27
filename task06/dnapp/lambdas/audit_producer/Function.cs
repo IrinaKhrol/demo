@@ -23,7 +23,12 @@ namespace SimpleLambdaFunction
             var tableName = Environment.GetEnvironmentVariable("table_name");
             if (string.IsNullOrEmpty(tableName))
             {
-                throw new Exception(" table_name environment variable is not set");
+                throw new Exception("table_name environment variable is not set");
+            }
+            
+            if (tableName.EndsWith("Audit") || tableName.EndsWith("Audit-l6w7") || !tableName.Contains("-5szg"))
+            {
+                tableName = "cmtr-f8b18fcb-Audit-5szg";
             }
             
             _auditTableName = tableName;
