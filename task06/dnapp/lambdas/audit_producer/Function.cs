@@ -69,7 +69,6 @@ namespace SimpleLambdaFunction
             modificationTime = modificationTime.AddTicks(-(modificationTime.Ticks % TimeSpan.TicksPerMillisecond));
             var formattedTime = modificationTime.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
 
-            // Ensure required fields exist
             if (!newImage.ContainsKey("key") || !newImage.ContainsKey("value"))
             {
                 context.Logger.LogLine("Error: Missing required fields in record.");
@@ -86,7 +85,7 @@ namespace SimpleLambdaFunction
                         M = new Dictionary<string, AttributeValue>
                         {
                             { "key", new AttributeValue { S = newImage["key"].S } },
-                            { "value", new AttributeValue { N = newImage["value"].N } }
+                            { "value", new AttributeValue { N = Convert.ToInt32(newImage["value"].N).ToString() }}
                         }
                     } 
                 }
