@@ -19,7 +19,6 @@ namespace SimpleLambdaFunction
         public Function()
         {
             _dynamoDbClient = new AmazonDynamoDBClient();
-
             _auditTableName = Environment.GetEnvironmentVariable("table_name") ?? "Audit";
         }
 
@@ -51,15 +50,21 @@ namespace SimpleLambdaFunction
         {
             var newImage = record.Dynamodb.NewImage;
 
+            var modificationTime = DateTime.UtcNow;
+            modificationTime = modificationTime.AddTicks(-(modificationTime.Ticks % TimeSpan.TicksPerMillisecond));
+            var formattedTime = modificationTime.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
+
             var auditItem = new Dictionary<string, AttributeValue>
             {
                 { "id", new AttributeValue { S = Guid.NewGuid().ToString() } },
-                { "itemKey", newImage["key"] },
-                { "modificationTime", new AttributeValue { S = DateTime.UtcNow.ToString("o") } },
-                { "newValue", new AttributeValue { S = JsonSerializer.Serialize(new {
-                    key = newImage["key"].S,
-                    value = int.Parse(newImage["value"].N)
-                })} }
+                { "itemKey", new AttributeValue { S = newImage["key"].S } },
+                { "modificationTime", new AttributeValue { S = formattedTime } },
+                { "newValue", new AttributeValue { M = new Dictionary<string, AttributeValue>
+                    {
+                        { "key", new AttributeValue { S = newImage["key"].S } },
+                        { "value", new AttributeValue { N = newImage["value"].N } }
+                    }
+                }}
             };
 
             await PutItemInAuditTable(auditItem, context);
@@ -73,14 +78,23 @@ namespace SimpleLambdaFunction
             var oldValue = int.Parse(oldImage["value"].N);
             var newValue = int.Parse(newImage["value"].N);
 
+            var modificationTime = DateTime.UtcNow;
+            modificationTime = modificationTime.AddTicks(-(modificationTime.Ticks % TimeSpan.TicksPerMillisecond));
+            var formattedTime = modificationTime.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
+
             var auditItem = new Dictionary<string, AttributeValue>
             {
                 { "id", new AttributeValue { S = Guid.NewGuid().ToString() } },
-                { "itemKey", newImage["key"] },
-                { "modificationTime", new AttributeValue { S = DateTime.UtcNow.ToString("o") } },
+                { "itemKey", new AttributeValue { S = newImage["key"].S } },
+                { "modificationTime", new AttributeValue { S = formattedTime } },
                 { "updatedAttribute", new AttributeValue { S = "value" } },
                 { "oldValue", new AttributeValue { N = oldValue.ToString() } },
-                { "newValue", new AttributeValue { N = newValue.ToString() } }
+                { "newValue", new AttributeValue { M = new Dictionary<string, AttributeValue>
+                    {
+                        { "key", new AttributeValue { S = newImage["key"].S } },
+                        { "value", new AttributeValue { N = newValue.ToString() } }
+                    }
+                }}
             };
 
             await PutItemInAuditTable(auditItem, context);
