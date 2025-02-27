@@ -11,6 +11,17 @@ using System.Threading.Tasks;
 
 namespace SimpleLambdaFunction
 {
+    // Модель для записи аудита
+    public class AuditEntry
+    {
+        public string id { get; set; }
+        public string itemKey { get; set; }
+        public string modificationTime { get; set; }
+        public string updatedAttribute { get; set; }
+        public int? oldValue { get; set; }
+        public dynamic item { get; set; }
+    }
+
     public class Function
     {
         private readonly AmazonDynamoDBClient _dynamoDbClient;
@@ -30,10 +41,6 @@ namespace SimpleLambdaFunction
             {
                 try
                 {
-                    context.Logger.LogLine($"EventName: {record.EventName}, EventSource: {record.EventSource}");
-                    context.Logger.LogLine($"DynamoDB keys: {JsonSerializer.Serialize(record.Dynamodb.Keys)}");
-                    context.Logger.LogLine($"DynamoDB NewImage: {JsonSerializer.Serialize(record.Dynamodb.NewImage)}");
-                    
                     if (record.EventName == "INSERT")
                     {
                         await HandleInsert(record, context);
@@ -46,7 +53,6 @@ namespace SimpleLambdaFunction
                 catch (Exception ex)
                 {
                     context.Logger.LogLine($"Error processing record: {ex.Message}");
-                    context.Logger.LogLine($"Stack trace: {ex.StackTrace}");
                 }
             }
         }
@@ -54,69 +60,103 @@ namespace SimpleLambdaFunction
         private async Task HandleInsert(DynamoDBEvent.DynamodbStreamRecord record, ILambdaContext context)
         {
             var newImage = record.Dynamodb.NewImage;
+            var key = newImage["key"].S;
+            var value = int.Parse(newImage["value"].N);
 
-            var modificationTime = DateTime.UtcNow;
-            modificationTime = modificationTime.AddTicks(-(modificationTime.Ticks % TimeSpan.TicksPerMillisecond));
-            var formattedTime = modificationTime.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
-
-            var auditItem = new Dictionary<string, AttributeValue>
+            var auditEntry = new AuditEntry
             {
-                { "id", new AttributeValue { S = Guid.NewGuid().ToString() } },
-                { "itemKey", new AttributeValue { S = newImage["key"].S } },
-                { "modificationTime", new AttributeValue { S = formattedTime } },
-                { "item.newValue", new AttributeValue 
-                    { 
-                        M = new Dictionary<string, AttributeValue>
-                        {
-                            { "key", new AttributeValue { S = newImage["key"].S } },
-                            { "value", new AttributeValue { N = newImage["value"].N } }
-                        }
+                id = Guid.NewGuid().ToString(),
+                itemKey = key,
+                modificationTime = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
+                item = new { 
+                    newValue = new { 
+                        key, 
+                        value 
                     } 
                 }
             };
 
-            await PutItemInAuditTable(auditItem, context);
-            
-            context.Logger.LogLine($"Audit item created: {JsonSerializer.Serialize(auditItem)}");
+            await InsertAuditRecordAsync(auditEntry, context);
         }
 
         private async Task HandleModify(DynamoDBEvent.DynamodbStreamRecord record, ILambdaContext context)
         {
             var oldImage = record.Dynamodb.OldImage;
             var newImage = record.Dynamodb.NewImage;
-
+            
+            var key = newImage["key"].S;
             var oldValue = int.Parse(oldImage["value"].N);
-            var newValue = int.Parse(newImage["value"].N);
+            var value = int.Parse(newImage["value"].N);
 
-            var modificationTime = DateTime.UtcNow;
-            modificationTime = modificationTime.AddTicks(-(modificationTime.Ticks % TimeSpan.TicksPerMillisecond));
-            var formattedTime = modificationTime.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
-
-            var auditItem = new Dictionary<string, AttributeValue>
+            var auditEntry = new AuditEntry
             {
-                { "id", new AttributeValue { S = Guid.NewGuid().ToString() } },
-                { "itemKey", new AttributeValue { S = newImage["key"].S } },
-                { "modificationTime", new AttributeValue { S = formattedTime } },
-                { "updatedAttribute", new AttributeValue { S = "value" } },
-                { "oldValue", new AttributeValue { N = oldValue.ToString() } },
-                { "item.newValue", new AttributeValue 
-                    { 
-                        M = new Dictionary<string, AttributeValue>
-                        {
-                            { "key", new AttributeValue { S = newImage["key"].S } },
-                            { "value", new AttributeValue { N = newValue.ToString() } }
-                        }
+                id = Guid.NewGuid().ToString(),
+                itemKey = key,
+                modificationTime = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
+                updatedAttribute = "value",
+                oldValue = oldValue,
+                item = new { 
+                    newValue = new { 
+                        key, 
+                        value 
                     } 
                 }
             };
 
-            await PutItemInAuditTable(auditItem, context);
-            
-            context.Logger.LogLine($"Audit item updated: {JsonSerializer.Serialize(auditItem)}");
+            await InsertAuditRecordAsync(auditEntry, context);
         }
 
-        private async Task PutItemInAuditTable(Dictionary<string, AttributeValue> auditItem, ILambdaContext context)
+        private async Task InsertAuditRecordAsync(AuditEntry auditEntry, ILambdaContext context)
         {
+            // Конвертируем объект в словарь атрибутов для DynamoDB
+            var auditItem = new Dictionary<string, AttributeValue>();
+            
+            // Добавляем базовые поля
+            auditItem["id"] = new AttributeValue { S = auditEntry.id };
+            auditItem["itemKey"] = new AttributeValue { S = auditEntry.itemKey };
+            auditItem["modificationTime"] = new AttributeValue { S = auditEntry.modificationTime };
+            
+            // Добавляем опциональные поля
+            if (!string.IsNullOrEmpty(auditEntry.updatedAttribute))
+            {
+                auditItem["updatedAttribute"] = new AttributeValue { S = auditEntry.updatedAttribute };
+            }
+            
+            if (auditEntry.oldValue.HasValue)
+            {
+                auditItem["oldValue"] = new AttributeValue { N = auditEntry.oldValue.Value.ToString() };
+            }
+            
+            // Сериализуем вложенное свойство item в атрибуты
+            if (auditEntry.item != null)
+            {
+                // Преобразуем объект в строку JSON, затем обратно в словарь для создания структуры атрибутов
+                string itemJson = JsonSerializer.Serialize(auditEntry.item);
+                var dynamicItem = JsonSerializer.Deserialize<Dictionary<string, object>>(itemJson);
+                
+                if (dynamicItem.ContainsKey("newValue"))
+                {
+                    string newValueJson = JsonSerializer.Serialize(dynamicItem["newValue"]);
+                    var newValueObj = JsonSerializer.Deserialize<Dictionary<string, object>>(newValueJson);
+                    
+                    auditItem["item"] = new AttributeValue
+                    {
+                        M = new Dictionary<string, AttributeValue>
+                        {
+                            { "newValue", new AttributeValue
+                                {
+                                    M = new Dictionary<string, AttributeValue>
+                                    {
+                                        { "key", new AttributeValue { S = newValueObj["key"].ToString() } },
+                                        { "value", new AttributeValue { N = newValueObj["value"].ToString() } }
+                                    }
+                                }
+                            }
+                        }
+                    };
+                }
+            }
+            
             var putRequest = new PutItemRequest
             {
                 TableName = _auditTableName,
@@ -126,12 +166,11 @@ namespace SimpleLambdaFunction
             try
             {
                 await _dynamoDbClient.PutItemAsync(putRequest);
-                context.Logger.LogLine($"Created audit entry in table {_auditTableName}");
+                context.Logger.LogLine($"Created audit entry in table {_auditTableName} with ID {auditEntry.id}");
             }
             catch (Exception ex)
             {
                 context.Logger.LogLine($"Error creating audit entry in table {_auditTableName}: {ex.Message}");
-                context.Logger.LogLine($"Stack trace: {ex.StackTrace}");
             }
         }
     }
