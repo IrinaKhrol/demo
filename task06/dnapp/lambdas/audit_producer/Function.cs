@@ -59,12 +59,15 @@ namespace SimpleLambdaFunction
                 { "id", new AttributeValue { S = Guid.NewGuid().ToString() } },
                 { "itemKey", new AttributeValue { S = newImage["key"].S } },
                 { "modificationTime", new AttributeValue { S = formattedTime } },
-                { "newValue", new AttributeValue { M = new Dictionary<string, AttributeValue>
-                    {
-                        { "key", new AttributeValue { S = newImage["key"].S } },
-                        { "value", new AttributeValue { N = newImage["value"].N } }
-                    }
-                }}
+                { "item.newValue", new AttributeValue 
+                    { 
+                        M = new Dictionary<string, AttributeValue>
+                        {
+                            { "key", new AttributeValue { S = newImage["key"].S } },
+                            { "value", new AttributeValue { N = newImage["value"].N } }
+                        }
+                    } 
+                }
             };
 
             await PutItemInAuditTable(auditItem, context);
@@ -89,12 +92,15 @@ namespace SimpleLambdaFunction
                 { "modificationTime", new AttributeValue { S = formattedTime } },
                 { "updatedAttribute", new AttributeValue { S = "value" } },
                 { "oldValue", new AttributeValue { N = oldValue.ToString() } },
-                { "newValue", new AttributeValue { M = new Dictionary<string, AttributeValue>
-                    {
-                        { "key", new AttributeValue { S = newImage["key"].S } },
-                        { "value", new AttributeValue { N = newValue.ToString() } }
-                    }
-                }}
+                { "item.newValue", new AttributeValue 
+                    { 
+                        M = new Dictionary<string, AttributeValue>
+                        {
+                            { "key", new AttributeValue { S = newImage["key"].S } },
+                            { "value", new AttributeValue { N = newValue.ToString() } }
+                        }
+                    } 
+                }
             };
 
             await PutItemInAuditTable(auditItem, context);
