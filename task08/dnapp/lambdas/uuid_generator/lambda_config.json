@@ -11,7 +11,7 @@
   "dependencies": [],
   "event_sources": [
     {
-       "resource_type": "cloudwatch_rule_trigger",
+      "resource_type": "cloudwatch_rule_trigger",
       "target_rule": "uuid_trigger"
     }
   ],
