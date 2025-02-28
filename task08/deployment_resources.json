@@ -15,6 +15,9 @@
             "ssm:PutParameter",
             "ssm:GetParameter",
             "kms:Decrypt",
+            "s3:PutObject",
+            "s3:ListBucket",
+            "s3:GetObject",
             "s3:*",
             "lambda:DeleteFunction"
           ],
@@ -42,7 +45,7 @@
     },
     "tags": {}
   },  
-  "uuid-trigger": {
+  "uuid_trigger": {
     "resource_type": "cloudwatch_rule",
     "rule_type": "schedule",
     "tags": {},
