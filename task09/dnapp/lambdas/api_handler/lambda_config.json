@@ -8,18 +8,10 @@
   "memory": 128,
   "timeout": 100,
   "lambda_path": "lambdas\\api_handler",
-  "dependencies": [
-    {
-      "arn": "openmeteo_sdk",
-      "version": "latest",
-      "resource_name": "openmeteo_sdk",
-      "resource_type": "lambda_layer"
-    }
-  ],
+  "dependencies": [],
   "event_sources": [],
   "env_variables": {},
-  "publish_version": true,
-  
+  "publish_version": true, 
   "alias": "${lambdas_alias_name}",
   "url_config": {
     "path": "/weather",
@@ -27,5 +19,6 @@
     "auth_type": "NONE"
   },
   "ephemeral_storage": 512,
+  "layers": ["openmeteo_sdk"],
   "tags": {}
 }
