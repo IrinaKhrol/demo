@@ -8,7 +8,14 @@
   "memory": 128,
   "timeout": 100,
   "lambda_path": "lambdas\\api_handler",
-  "dependencies": [],
+  "dependencies": [
+    {
+      "arn": "openmeteo_sdk",
+      "version": "latest",
+      "resource_name": "openmeteo_sdk",
+      "resource_type": "lambda_layer"
+    }
+  ],
   "event_sources": [],
   "env_variables": {},
   "publish_version": true,
