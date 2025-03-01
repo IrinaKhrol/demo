@@ -10,7 +10,7 @@ using Amazon.Lambda.Annotations;
 
 [assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
 
-namespace ApiHandler
+namespace SimpleLambdaFunction
 {
     public class Function
     {
