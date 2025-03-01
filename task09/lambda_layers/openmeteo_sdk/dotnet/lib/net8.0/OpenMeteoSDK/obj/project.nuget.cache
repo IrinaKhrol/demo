@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "dgSpecHash": "C0kEvdN+PAUCr3l7JL3aTlrINl2Z+YZ60RSI4GqHePI3u399U0/43GUwyjUqrUVQm2ehtpECAnUCQmawikMO3g==",
+  "success": true,
+  "projectFilePath": "C:\\Users\\Irina\\demo\\demo\\task09\\lambda_layers\\openmeteo_sdk\\dotnet\\lib\\net8.0\\OpenMeteoSDK\\OpenMeteoSDK.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Irina\\.nuget\\packages\\system.net.http.json\\8.0.0\\system.net.http.json.8.0.0.nupkg.sha512",
+    "C:\\Users\\Irina\\.nuget\\packages\\system.text.encodings.web\\8.0.0\\system.text.encodings.web.8.0.0.nupkg.sha512",
+    "C:\\Users\\Irina\\.nuget\\packages\\system.text.json\\8.0.0\\system.text.json.8.0.0.nupkg.sha512"
+  ],
+  "logs": []
+}

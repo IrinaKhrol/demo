@@ -1,0 +1,9 @@
+{
+  "name": "openmeteo_sdk",
+  "resource_type": "lambda_layer",
+  "runtimes": [
+    "dotnet8"
+  ],
+  "deployment_package": "openmeteo_sdk_layer.zip",
+  "custom_packages": []
+}
