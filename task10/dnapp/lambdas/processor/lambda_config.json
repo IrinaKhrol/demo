@@ -5,6 +5,7 @@
   "resource_type": "lambda",
   "iam_role_name": "processor-role",
   "runtime": "dotnet8",
+   "tracing": "active",
   "memory": 128,
   "timeout": 100,
   "lambda_path": "lambdas\\processor",
