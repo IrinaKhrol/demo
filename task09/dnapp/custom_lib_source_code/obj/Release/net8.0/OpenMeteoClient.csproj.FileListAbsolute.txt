@@ -1,0 +1,12 @@
+C:\Users\Irina\demo\demo\task09\dnapp\custom_lib_source_code\bin\Release\net8.0\OpenMeteoClient.deps.json
+C:\Users\Irina\demo\demo\task09\dnapp\custom_lib_source_code\bin\Release\net8.0\OpenMeteoClient.dll
+C:\Users\Irina\demo\demo\task09\dnapp\custom_lib_source_code\bin\Release\net8.0\OpenMeteoClient.pdb
+C:\Users\Irina\demo\demo\task09\dnapp\custom_lib_source_code\obj\Release\net8.0\OpenMeteoClient.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Irina\demo\demo\task09\dnapp\custom_lib_source_code\obj\Release\net8.0\OpenMeteoClient.AssemblyInfoInputs.cache
+C:\Users\Irina\demo\demo\task09\dnapp\custom_lib_source_code\obj\Release\net8.0\OpenMeteoClient.AssemblyInfo.cs
+C:\Users\Irina\demo\demo\task09\dnapp\custom_lib_source_code\obj\Release\net8.0\OpenMeteoClient.csproj.CoreCompileInputs.cache
+C:\Users\Irina\demo\demo\task09\dnapp\custom_lib_source_code\obj\Release\net8.0\OpenMeteoClient.sourcelink.json
+C:\Users\Irina\demo\demo\task09\dnapp\custom_lib_source_code\obj\Release\net8.0\OpenMeteoClient.dll
+C:\Users\Irina\demo\demo\task09\dnapp\custom_lib_source_code\obj\Release\net8.0\refint\OpenMeteoClient.dll
+C:\Users\Irina\demo\demo\task09\dnapp\custom_lib_source_code\obj\Release\net8.0\OpenMeteoClient.pdb
+C:\Users\Irina\demo\demo\task09\dnapp\custom_lib_source_code\obj\Release\net8.0\ref\OpenMeteoClient.dll

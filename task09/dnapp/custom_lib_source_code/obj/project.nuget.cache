@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "dgSpecHash": "SHCnkN6MYWKGTUIVmA5xvU/FZrf1WZ6xmumQMz7pfeLxXdHIDF7OPF5ovVG2knt1BX5VrWHzyMYo8QtN0ikGuw==",
+  "success": true,
+  "projectFilePath": "C:\\Users\\Irina\\demo\\demo\\task09\\dnapp\\custom_lib_source_code\\OpenMeteoClient.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Irina\\.nuget\\packages\\system.net.http.json\\8.0.0\\system.net.http.json.8.0.0.nupkg.sha512",
+    "C:\\Users\\Irina\\.nuget\\packages\\system.text.encodings.web\\8.0.0\\system.text.encodings.web.8.0.0.nupkg.sha512",
+    "C:\\Users\\Irina\\.nuget\\packages\\system.text.json\\8.0.0\\system.text.json.8.0.0.nupkg.sha512"
+  ],
+  "logs": []
+}

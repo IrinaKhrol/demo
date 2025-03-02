@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
+  <metadata>
+    <id>OpenMeteoClient</id>
+    <version>1.0.0</version>
+    <authors>OpenMeteoClient</authors>
+    <description>Package Description</description>
+    <repository type="git" commit="cd2355dd9a2c953c206bcf6aca13699fbab46159" />
+    <dependencies>
+      <group targetFramework="net8.0">
+        <dependency id="System.Net.Http.Json" version="8.0.0" exclude="Build,Analyzers" />
+      </group>
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="C:\Users\Irina\demo\demo\task09\dnapp\custom_lib_source_code\bin\Release\net8.0\OpenMeteoClient.dll" target="lib\net8.0\OpenMeteoClient.dll" />
+  </files>
+</package>
