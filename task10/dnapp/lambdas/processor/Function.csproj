@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <AssemblyName>SimpleLambdaFunction</AssemblyName>
+        <TargetFramework>net8.0</TargetFramework>
+        <OutputType>Library</OutputType>
+        <Nullable>enable</Nullable>
+        <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="Amazon.Lambda.APIGatewayEvents" Version="2.4.0" />
+        <PackageReference Include="Amazon.Lambda.Core" Version="2.5.0" />
+        <PackageReference Include="Amazon.Lambda.Serialization.SystemTextJson" Version="2.3.1" />
+        <PackageReference Include="System.Net.Http.Json" Version="8.0.0" />
+        <PackageReference Include="Amazon.Lambda.Annotations" Version="1.6.3" />
+         <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.301" />
+       <PackageReference Include="AWSXRayRecorder.Handlers.AwsSdk" Version="2.12.0" />
+    </ItemGroup>
+</Project>
