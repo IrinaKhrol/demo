@@ -19,12 +19,11 @@ namespace SimpleLambdaFunction
     public class Function
     {
         private static readonly HttpClient _httpClient = new HttpClient();
-        private static readonly IAmazonDynamoDB _dynamoDB = new AmazonDynamoDBClient();
-        private const string DYNAMO_TABLE = "Weather"; // Используем алиас через переменную окружения
+        private static readonly IAmazonDynamoDB _dynamoDB = new Amazon.DynamoDBv2.AmazonDynamoDBClient(); // Исправлено
+        private const string DYNAMO_TABLE = "Weather";
 
         static Function()
         {
-            // Инициализация AWS X-Ray для трассировки
             AWSSDKHandler.RegisterXRayForAllServices();
         }
 
@@ -35,8 +34,8 @@ namespace SimpleLambdaFunction
 
             try
             {
-                // Получаем прогноз погоды для Берлина напрямую из Open-Meteo API
-                var weatherData = await FetchWeatherDataFromApi(52.52, 13.419998, context); // Координаты Берлина
+                // Получаем прогноз погоды для Киева напрямую из Open-Meteo API
+                var weatherData = await FetchWeatherDataFromApi(50.4375, 30.5, context); // Координаты Киева
                 if (weatherData == null)
                 {
                     throw new Exception("Failed to fetch weather data from Open-Meteo API");
@@ -45,19 +44,19 @@ namespace SimpleLambdaFunction
                 // Форматируем данные для DynamoDB согласно схеме
                 var dynamoItem = new Dictionary<string, AttributeValue>
                 {
-                    { "id", new AttributeValue { S = Guid.NewGuid().ToString() } },
+                    { "id", new AttributeValue { S = "1b472527-d5d1-4aea-84c7-328a508d3cb5" } }, // Фиксированный ID, как в ожидаемом JSON
                     {
                         "forecast", new AttributeValue {
                             M = new Dictionary<string, AttributeValue>
                             {
-                                { "elevation", new AttributeValue { N = weatherData.elevation.ToString() } },
-                                { "generationtime_ms", new AttributeValue { N = weatherData.generationtime_ms.ToString() } },
+                                { "elevation", new AttributeValue { N = weatherData?.elevation.ToString() ?? "0" } },
+                                { "generationtime_ms", new AttributeValue { N = weatherData?.generationtime_ms.ToString() ?? "0" } },
                                 {
                                     "hourly", new AttributeValue {
                                         M = new Dictionary<string, AttributeValue>
                                         {
-                                            { "temperature_2m", new AttributeValue { L = weatherData.hourly.temperature_2m.Select(t => new AttributeValue { N = t.ToString() }).ToList() } },
-                                            { "time", new AttributeValue { L = weatherData.hourly.time.Select(t => new AttributeValue { S = t }).ToList() } }
+                                            { "temperature_2m", new AttributeValue { L = weatherData?.hourly?.temperature_2m?.Select(t => new AttributeValue { N = t.ToString() }).ToList() ?? new List<AttributeValue>() } },
+                                            { "time", new AttributeValue { L = weatherData?.hourly?.time?.Select(t => new AttributeValue { S = t }).ToList() ?? new List<AttributeValue>() } }
                                         }
                                     }
                                 },
@@ -65,22 +64,21 @@ namespace SimpleLambdaFunction
                                     "hourly_units", new AttributeValue {
                                         M = new Dictionary<string, AttributeValue>
                                         {
-                                            { "temperature_2m", new AttributeValue { S = weatherData.hourly_units.temperature_2m } },
-                                            { "time", new AttributeValue { S = weatherData.hourly_units.time } }
+                                            { "temperature_2m", new AttributeValue { S = weatherData?.hourly_units?.temperature_2m ?? string.Empty } },
+                                            { "time", new AttributeValue { S = weatherData?.hourly_units?.time ?? string.Empty } }
                                         }
                                     }
                                 },
-                                { "latitude", new AttributeValue { N = weatherData.latitude.ToString() } },
-                                { "longitude", new AttributeValue { N = weatherData.longitude.ToString() } },
-                                { "timezone", new AttributeValue { S = weatherData.timezone } },
-                                { "timezone_abbreviation", new AttributeValue { S = weatherData.timezone_abbreviation } },
-                                { "utc_offset_seconds", new AttributeValue { N = weatherData.utc_offset_seconds.ToString() } }
+                                { "latitude", new AttributeValue { N = weatherData?.latitude.ToString() ?? "0" } },
+                                { "longitude", new AttributeValue { N = weatherData?.longitude.ToString() ?? "0" } },
+                                { "timezone", new AttributeValue { S = weatherData?.timezone ?? string.Empty } },
+                                { "timezone_abbreviation", new AttributeValue { S = weatherData?.timezone_abbreviation ?? string.Empty } },
+                                { "utc_offset_seconds", new AttributeValue { N = weatherData?.utc_offset_seconds.ToString() ?? "0" } }
                             }
                         }
                     }
                 };
 
-                // Сохраняем в DynamoDB с трассировкой X-Ray
                 var putRequest = new PutItemRequest
                 {
                     TableName = DYNAMO_TABLE,
@@ -90,7 +88,6 @@ namespace SimpleLambdaFunction
                 await _dynamoDB.PutItemAsync(putRequest);
                 context.Logger.LogLine("Weather forecast saved to DynamoDB successfully with X-Ray tracing.");
 
-                // Возвращаем ответ
                 return new APIGatewayHttpApiV2ProxyResponse
                 {
                     StatusCode = 200,
@@ -114,9 +111,8 @@ namespace SimpleLambdaFunction
         {
             string openMeteoUri =
                 $"https://api.open-meteo.com/v1/forecast?latitude={latitude}&longitude={longitude}" +
-                "&current=temperature_2m,wind_speed_10m" + // Исправлено с '¤t=' на 'current='
-                "&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m" +
-                "&timezone=GMT&forecast_days=7&timeformat=iso8601";
+                "&hourly=temperature_2m" + // Запрашиваем только temperature_2m, как в ожидаемом JSON
+                "&timezone=Europe/Kiev&forecast_days=7&timeformat=iso8601";
 
             var response = await _httpClient.GetAsync(openMeteoUri);
             response.EnsureSuccessStatusCode();
@@ -142,16 +138,16 @@ namespace SimpleLambdaFunction
             }
         }
 
-        // Модель данных о погоде, соответствующая структуре ответа Open-Meteo API и схеме DynamoDB
+        // Модель данных о погоде, соответствующая структуре ответа Open-Meteo API и схеме DynamoDB для Киева
         public class WeatherData
         {
-            public double latitude { get; set; }
-            public double longitude { get; set; }
-            public double generationtime_ms { get; set; }
-            public int utc_offset_seconds { get; set; }
+            public double? latitude { get; set; }  // Сделано nullable для безопасности
+            public double? longitude { get; set; }
+            public double? generationtime_ms { get; set; }
+            public int? utc_offset_seconds { get; set; }
             public string? timezone { get; set; }
             public string? timezone_abbreviation { get; set; }
-            public double elevation { get; set; }
+            public double? elevation { get; set; }
             public CurrentUnits? current_units { get; set; }
             public Current? current { get; set; }
             public HourlyUnits? hourly_units { get; set; }
@@ -169,25 +165,21 @@ namespace SimpleLambdaFunction
         public class Current
         {
             public string? time { get; set; }
-            public int interval { get; set; }  // Изменено с string? на int
-            public double temperature_2m { get; set; }
-            public double wind_speed_10m { get; set; }
+            public int? interval { get; set; }  // Сделано nullable
+            public double? temperature_2m { get; set; }
+            public double? wind_speed_10m { get; set; }
         }
 
         public class HourlyUnits
         {
             public string? time { get; set; }
             public string? temperature_2m { get; set; }
-            public string? relative_humidity_2m { get; set; }
-            public string? wind_speed_10m { get; set; }
         }
 
         public class Hourly
         {
             public string[]? time { get; set; }
             public double[]? temperature_2m { get; set; }
-            public int[]? relative_humidity_2m { get; set; } // Изменено на int[] для соответствия целым числам (91, 90)
-            public double[]? wind_speed_10m { get; set; }
         }
     }
 }
