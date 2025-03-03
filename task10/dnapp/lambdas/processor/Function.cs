@@ -1,7 +1,7 @@
 using Amazon.Lambda.Core;
 using Amazon.Lambda.APIGatewayEvents;
-using System.Collections.Generic;
 using System;
+using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Amazon.Lambda.Annotations;
@@ -18,12 +18,15 @@ namespace SimpleLambdaFunction
 {
     public class Function
     {
+        private readonly IAmazonDynamoDB _dynamoDB;
+        private readonly string _tableName;
         private static readonly HttpClient _httpClient = new HttpClient();
-        private static readonly IAmazonDynamoDB _dynamoDB = new Amazon.DynamoDBv2.AmazonDynamoDBClient(); // Исправлено
-        private const string DYNAMO_TABLE = "Weather";
 
-        static Function()
+        public Function()
         {
+            this._dynamoDB = new AmazonDynamoDBClient();
+            // Получаем имя таблицы из переменной окружения или используем префикс для имени
+            this._tableName = Environment.GetEnvironmentVariable("DYNAMO_TABLE");
             AWSSDKHandler.RegisterXRayForAllServices();
         }
 
@@ -31,22 +34,42 @@ namespace SimpleLambdaFunction
         public async Task<APIGatewayHttpApiV2ProxyResponse> FunctionHandler(APIGatewayHttpApiV2ProxyRequest request, ILambdaContext context)
         {
             context.Logger.LogLine("Starting weather forecast processing with X-Ray tracing...");
+            context.Logger.LogLine($"Initialized with DynamoDB table: {this._tableName}");
 
             try
             {
-                // Получаем прогноз погоды для Киева напрямую из Open-Meteo API
+                // Проверяем, существует ли таблица
+                try
+                {
+                    var describeTableRequest = new DescribeTableRequest { TableName = this._tableName };
+                    var tableDescription = await this._dynamoDB.DescribeTableAsync(describeTableRequest);
+                    context.Logger.LogLine($"Found table: {tableDescription.Table.TableName}");
+                }
+                catch (ResourceNotFoundException ex)
+                {
+                    context.Logger.LogLine($"Table not found: {this._tableName}. Error: {ex.Message}");
+                    throw new Exception($"DynamoDB table {this._tableName} not found", ex);
+                }
+
+                 // Получаем прогноз погоды для Киева напрямую из Open-Meteo API
                 var weatherData = await FetchWeatherDataFromApi(50.4375, 30.5, context); // Координаты Киева
                 if (weatherData == null)
                 {
+                    context.Logger.LogLine("Weather data is null before processing");
                     throw new Exception("Failed to fetch weather data from Open-Meteo API");
                 }
+
+                context.Logger.LogLine($"Weather data fetched: {JsonSerializer.Serialize(weatherData)}");
+
+                // Генерируем уникальный ID в формате uuidv4
+                string uuid = Guid.NewGuid().ToString(); // Генерирует строку в формате uuidv4, например, "550e8400-e29b-41d4-a716-446655440000"
 
                 // Форматируем данные для DynamoDB согласно схеме
                 var dynamoItem = new Dictionary<string, AttributeValue>
                 {
-                    { "id", new AttributeValue { S = "1b472527-d5d1-4aea-84c7-328a508d3cb5" } }, // Фиксированный ID, как в ожидаемом JSON
+                    { "id", new AttributeValue { S = uuid } }, // Уникальный ID вместо фиксированного
                     {
-                        "forecast", new AttributeValue {
+                       "forecast", new AttributeValue {
                             M = new Dictionary<string, AttributeValue>
                             {
                                 { "elevation", new AttributeValue { N = weatherData?.elevation.ToString() ?? "0" } },
@@ -79,25 +102,36 @@ namespace SimpleLambdaFunction
                     }
                 };
 
+                // Логируем данные перед сохранением
+                context.Logger.LogLine($"Attempting to save item with ID {dynamoItem["id"].S} to DynamoDB table {this._tableName}");
+
                 var putRequest = new PutItemRequest
                 {
-                    TableName = DYNAMO_TABLE,
+                    TableName = this._tableName,
                     Item = dynamoItem
                 };
 
-                await _dynamoDB.PutItemAsync(putRequest);
-                context.Logger.LogLine("Weather forecast saved to DynamoDB successfully with X-Ray tracing.");
+                try
+                {
+                    await this._dynamoDB.PutItemAsync(putRequest);
+                    context.Logger.LogLine("Weather forecast saved to DynamoDB successfully with X-Ray tracing.");
+                }
+                catch (Exception ex)
+                {
+                    context.Logger.LogLine($"DynamoDB error while saving: {ex.Message}\nStackTrace: {ex.StackTrace}");
+                    throw;
+                }
 
                 return new APIGatewayHttpApiV2ProxyResponse
                 {
                     StatusCode = 200,
-                    Body = JsonSerializer.Serialize(new { message = "Weather forecast processed and saved to DynamoDB" }),
+                    Body = JsonSerializer.Serialize(new { message = "Weather forecast processed and saved to DynamoDB", id = dynamoItem["id"].S }),
                     Headers = new Dictionary<string, string> { { "Content-Type", "application/json" } }
                 };
             }
             catch (Exception ex)
             {
-                context.Logger.LogLine($"Error processing weather forecast: {ex.Message}");
+                context.Logger.LogLine($"Detailed error processing weather forecast: {ex.Message}\nStackTrace: {ex.StackTrace}");
                 return new APIGatewayHttpApiV2ProxyResponse
                 {
                     StatusCode = 500,
