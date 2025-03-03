@@ -1,19 +1,25 @@
-{
   "version": "1.0",
   "name": "processor",
   "func_name": "SimpleLambdaFunction::SimpleLambdaFunction.Function::FunctionHandler",
   "resource_type": "lambda",
   "iam_role_name": "processor-role",
   "runtime": "dotnet8",
-   "tracing": "active",
   "memory": 128,
   "timeout": 100,
   "lambda_path": "lambdas\\processor",
   "dependencies": [],
-  "event_sources": [],
+  "event_sources": [
+    {
+      "resource_type": "dynamodb_trigger",
+      "target_table": "Weather",
+      "batch_size": 123,
+      "function_response_types": ["ReportBatchItemFailures"]
+    }
+  ],
   "env_variables": {
     "DYNAMO_TABLE": "${target_table}"
   },
+  "tracing_mode": "Active",
   "publish_version": true,
   "alias": "${lambdas_alias_name}",
   "url_config": {
