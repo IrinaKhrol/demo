@@ -181,7 +181,7 @@ namespace SimpleLambdaFunction
                 return CreateResponse(400, new { message = "Missing email or password" });
             }
 
-            if (password.Length < 12 || !password.Any(c => "$%^*".Contains(c)))
+            if (password.Length < 12 || !password.Any(c => "$%^*-_".Contains(c)))
             {
                 return CreateResponse(400, new { message = "Password must be 12+ characters and include one of $%^*" });
             }
@@ -200,7 +200,7 @@ namespace SimpleLambdaFunction
                     }
                 };
                 var authResponse = await _cognitoClient.AdminInitiateAuthAsync(authRequest);
-                var accessToken = authResponse.AuthenticationResult.AccessToken;
+                var accessToken = authResponse.AuthenticationResult.IdToken;
                 return CreateResponse(200, new { accessToken });
             }
             catch (Exception ex)
