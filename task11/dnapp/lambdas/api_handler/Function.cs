@@ -200,7 +200,7 @@ namespace SimpleLambdaFunction
                     }
                 };
                 var authResponse = await _cognitoClient.AdminInitiateAuthAsync(authRequest);
-                var accessToken = authResponse.AuthenticationResult.IdToken;
+                var accessToken = authResponse.AuthenticationResult.AccessToken;
                 return CreateResponse(200, new { accessToken });
             }
             catch (Exception ex)
