@@ -8,7 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading.Tasks;
-using System.Linq; // Добавлено для LINQ
+using System.Linq;
 
 [assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
 
@@ -29,13 +29,13 @@ namespace SimpleLambdaFunction
     public class Reservation
     {
         [DynamoDBHashKey]
-        public string? ReservationId { get; set; } // Nullable для избежания CS8618
+        public string? ReservationId { get; set; }
         public int TableNumber { get; set; }
-        public string? ClientName { get; set; } // Nullable
-        public string? PhoneNumber { get; set; } // Nullable
-        public string? Date { get; set; } // Nullable
-        public string? SlotTimeStart { get; set; } // Nullable
-        public string? SlotTimeEnd { get; set; } // Nullable
+        public string? ClientName { get; set; }
+        public string? PhoneNumber { get; set; }
+        public string? Date { get; set; }
+        public string? SlotTimeStart { get; set; }
+        public string? SlotTimeEnd { get; set; }
     }
 
     public class Function
@@ -43,8 +43,8 @@ namespace SimpleLambdaFunction
         private readonly IAmazonCognitoIdentityProvider _cognitoClient;
         private readonly IAmazonDynamoDB _dynamoDbClient;
         private readonly DynamoDBContext _dynamoContext;
-        private readonly string? _userPoolId; // Nullable для избежания CS8618
-        private readonly string? _clientId; // Nullable
+        private readonly string? _userPoolId;
+        private readonly string? _clientId;
 
         public Function()
         {
@@ -131,7 +131,7 @@ namespace SimpleLambdaFunction
                 return CreateResponse(400, new { message = "Invalid email format" });
             }
 
-            if (password.Length < 12 || !password.Any(c => "$%^*-_".Contains(c))) // Исправлено с LINQ
+            if (password.Length < 12 || !password.Any(c => "$%^*-_".Contains(c)))
             {
                 return CreateResponse(400, new { message = "Password must be 12+ characters and include one of $%^*-_" });
             }
@@ -151,6 +151,15 @@ namespace SimpleLambdaFunction
                     }
                 };
                 await _cognitoClient.SignUpAsync(signUpRequest);
+
+                // Автоматическое подтверждение пользователя
+                var confirmRequest = new AdminConfirmSignUpRequest
+                {
+                    UserPoolId = _userPoolId,
+                    Username = email
+                };
+                await _cognitoClient.AdminConfirmSignUpAsync(confirmRequest);
+
                 return CreateResponse(200, new { message = "Sign-up successful" });
             }
             catch (Exception ex)
@@ -172,7 +181,7 @@ namespace SimpleLambdaFunction
                 return CreateResponse(400, new { message = "Missing email or password" });
             }
 
-            if (password.Length < 12 || !password.Any(c => "$%^*".Contains(c))) // Исправлено с LINQ
+            if (password.Length < 12 || !password.Any(c => "$%^*".Contains(c)))
             {
                 return CreateResponse(400, new { message = "Password must be 12+ characters and include one of $%^*" });
             }
