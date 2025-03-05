@@ -16,6 +16,9 @@
   ],
   "event_sources": [],
   "env_variables": {
+    "tables_db_table_name": "${tables_table}",
+    "reservations_db_table_name": "${reservations_table}",
+    "simple_booking_userpool_name": "${booking_userpool}",
     "cup_id": {
       "resource_name": "${booking_userpool}",
       "resource_type": "cognito_idp",
