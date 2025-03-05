@@ -29,30 +29,30 @@ namespace SimpleLambdaFunction
         public int MinOrder { get; set; }
     }
 
-    [DynamoDBTable("Reservations")]
-    public class Reservation
-    {
-        [DynamoDBHashKey("reservation_id")]
-        public string ReservationId { get; set; }
-        
-        [DynamoDBProperty("table_number")]
-        public int TableNumber { get; set; }
-        
-        [DynamoDBProperty("client_name")]
-        public string ClientName { get; set; }
-        
-        [DynamoDBProperty("phone_number")]
-        public string PhoneNumber { get; set; }
-        
-        [DynamoDBProperty("date")]
-        public string Date { get; set; }
-        
-        [DynamoDBProperty("slot_time_start")]
-        public string SlotTimeStart { get; set; }
-        
-        [DynamoDBProperty("slot_time_end")]
-        public string SlotTimeEnd { get; set; }
-    }
+[DynamoDBTable("Reservations")]
+public class Reservation
+{
+    [DynamoDBHashKey("reservationId")]
+    public string ReservationId { get; set; }
+    
+    [DynamoDBProperty("tableNumber")]
+    public int TableNumber { get; set; }
+    
+    [DynamoDBProperty("clientName")]
+    public string ClientName { get; set; }
+    
+    [DynamoDBProperty("phoneNumber")]
+    public string PhoneNumber { get; set; }
+    
+    [DynamoDBProperty("date")]
+    public string Date { get; set; }
+    
+    [DynamoDBProperty("slotTimeStart")]
+    public string SlotTimeStart { get; set; }
+    
+    [DynamoDBProperty("slotTimeEnd")]
+    public string SlotTimeEnd { get; set; }
+}
 
     public class Function
     {
