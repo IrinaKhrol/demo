@@ -14,7 +14,6 @@ using System.Linq;
 
 namespace SimpleLambdaFunction
 {
-    [DynamoDBTable("Tables")]
     public class Table
     {
         [DynamoDBHashKey("id")]
