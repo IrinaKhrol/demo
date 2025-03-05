@@ -258,32 +258,14 @@ namespace SimpleLambdaFunction
 
         private async Task<APIGatewayProxyResponse> HandleCreateTable(APIGatewayProxyRequest request)
         {
-            if (!await ValidateToken(request))
-            {
-                return CreateResponse(400, new { message = "Unauthorized " });
-            }
-
-            if (request.Body == null)
-            {
-                return CreateResponse(400, new { message = "Request body is null" });
-            }
-
+            var body = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(request.Body??"{}");
+            var id = body["id"].GetInt32();
+            var number = body["number"].GetInt32();
+            var places = body["places"].GetInt32();
+            var isVip = body["isVip"].GetBoolean();
+            var minOrder = body["minOrder"].GetInt32();
             try
-            {
-                var body = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(request.Body);
-                
-                if (!body.TryGetValue("id", out var idElement) || !idElement.TryGetInt32(out var id) || id <= 0 ||
-                    !body.TryGetValue("number", out var numberElement) || !numberElement.TryGetInt32(out var number) || number <= 0 ||
-                    !body.TryGetValue("places", out var placesElement) || !placesElement.TryGetInt32(out var places) || places <= 0 ||
-                    !body.TryGetValue("isVip", out var isVipElement) ||
-                    !body.TryGetValue("minOrder", out var minOrderElement) || !minOrderElement.TryGetInt32(out var minOrder))
-                {
-                    return CreateResponse(400, new { message = "Invalid table data" });
-                }
-
-                bool isVip = isVipElement.GetBoolean();
-                
-                // Используем метод CreateTable вместо прямого сохранения
+            {                                
                 int createdId = await CreateTable(id, number, places, isVip, minOrder);
                 
                 return CreateResponse(200, new { id = createdId });
