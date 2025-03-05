@@ -29,30 +29,30 @@ namespace SimpleLambdaFunction
         public int MinOrder { get; set; }
     }
 
-[DynamoDBTable("Reservations")]
-public class Reservation
-{
-    [DynamoDBHashKey("reservationId")]
-    public string ReservationId { get; set; }
-    
-    [DynamoDBProperty("tableNumber")]
-    public int TableNumber { get; set; }
-    
-    [DynamoDBProperty("clientName")]
-    public string ClientName { get; set; }
-    
-    [DynamoDBProperty("phoneNumber")]
-    public string PhoneNumber { get; set; }
-    
-    [DynamoDBProperty("date")]
-    public string Date { get; set; }
-    
-    [DynamoDBProperty("slotTimeStart")]
-    public string SlotTimeStart { get; set; }
-    
-    [DynamoDBProperty("slotTimeEnd")]
-    public string SlotTimeEnd { get; set; }
-}
+    [DynamoDBTable("Reservations")]
+    public class Reservation
+    {
+        [DynamoDBHashKey("reservationId")]
+        public string ReservationId { get; set; }
+        
+        [DynamoDBProperty("tableNumber")]
+        public int TableNumber { get; set; }
+        
+        [DynamoDBProperty("clientName")]
+        public string ClientName { get; set; }
+        
+        [DynamoDBProperty("phoneNumber")]
+        public string PhoneNumber { get; set; }
+        
+        [DynamoDBProperty("date")]
+        public string Date { get; set; }
+        
+        [DynamoDBProperty("slotTimeStart")]
+        public string SlotTimeStart { get; set; }
+        
+        [DynamoDBProperty("slotTimeEnd")]
+        public string SlotTimeEnd { get; set; }
+    }
 
     public class Function
     {
@@ -236,6 +236,27 @@ public class Reservation
             return CreateResponse(200, new { tables });
         }
 
+        public async Task<int> CreateTable(int id, int number, int places, bool isVip, int minOrder)
+        {
+            var tableName = Environment.GetEnvironmentVariable("tables_db_table_name");
+            var tableRequest = new Table()
+            {
+                Id = id.ToString(),
+                Number = number,
+                Places = places,
+                IsVip = isVip,
+                MinOrder = minOrder
+            };
+            
+            var config = new DynamoDBOperationConfig
+            {
+                OverrideTableName = tableName
+            };
+            
+            await _dynamoContext.SaveAsync(tableRequest, config);
+            return id;
+        }
+
         private async Task<APIGatewayProxyResponse> HandleCreateTable(APIGatewayProxyRequest request)
         {
             if (!await ValidateToken(request))
@@ -263,17 +284,10 @@ public class Reservation
 
                 bool isVip = isVipElement.GetBoolean();
                 
-                var table = new Table
-                {
-                    Id = id.ToString(),
-                    Number = number,
-                    Places = places,
-                    IsVip = isVip,
-                    MinOrder = minOrder
-                };
+                // Используем метод CreateTable вместо прямого сохранения
+                int createdId = await CreateTable(id, number, places, isVip, minOrder);
                 
-                await _dynamoContext.SaveAsync(table);
-                return CreateResponse(200, new { id = id });
+                return CreateResponse(200, new { id = createdId });
             }
             catch (Exception ex)
             {
