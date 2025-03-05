@@ -17,25 +17,41 @@ namespace SimpleLambdaFunction
     [DynamoDBTable("Tables")]
     public class Table
     {
-        [DynamoDBHashKey]
-        public int Id { get; set; }
+        [DynamoDBHashKey("id")]
+        public string Id { get; set; }
+        [DynamoDBProperty("number")]
         public int Number { get; set; }
+        [DynamoDBProperty("places")]
         public int Places { get; set; }
+        [DynamoDBProperty("isVip")]
         public bool IsVip { get; set; }
-        public int? MinOrder { get; set; }
+        [DynamoDBProperty("minOrder")]
+        public int MinOrder { get; set; }
     }
 
     [DynamoDBTable("Reservations")]
     public class Reservation
     {
-        [DynamoDBHashKey]
-        public string? ReservationId { get; set; }
+        [DynamoDBHashKey("reservation_id")]
+        public string ReservationId { get; set; }
+        
+        [DynamoDBProperty("table_number")]
         public int TableNumber { get; set; }
-        public string? ClientName { get; set; }
-        public string? PhoneNumber { get; set; }
-        public string? Date { get; set; }
-        public string? SlotTimeStart { get; set; }
-        public string? SlotTimeEnd { get; set; }
+        
+        [DynamoDBProperty("client_name")]
+        public string ClientName { get; set; }
+        
+        [DynamoDBProperty("phone_number")]
+        public string PhoneNumber { get; set; }
+        
+        [DynamoDBProperty("date")]
+        public string Date { get; set; }
+        
+        [DynamoDBProperty("slot_time_start")]
+        public string SlotTimeStart { get; set; }
+        
+        [DynamoDBProperty("slot_time_end")]
+        public string SlotTimeEnd { get; set; }
     }
 
     public class Function
@@ -220,27 +236,49 @@ namespace SimpleLambdaFunction
             return CreateResponse(200, new { tables });
         }
 
-       private async Task<APIGatewayProxyResponse> HandleCreateTable(APIGatewayProxyRequest request)
+        private async Task<APIGatewayProxyResponse> HandleCreateTable(APIGatewayProxyRequest request)
         {
-            // Временное отключение авторизации для теста
-            // if (!await ValidateToken(request))
-            // {
-            //     return CreateResponse(400, new { message = "Unauthorized" });
-            // }
+            if (!await ValidateToken(request))
+            {
+                return CreateResponse(400, new { message = "Unauthorized " });
+            }
 
             if (request.Body == null)
             {
                 return CreateResponse(400, new { message = "Request body is null" });
             }
 
-            var table = JsonSerializer.Deserialize<Table>(request.Body);
-            if (table.Id <= 0 || table.Number <= 0 || table.Places <= 0)
+            try
             {
-                return CreateResponse(400, new { message = "Invalid table data" });
-            }
+                var body = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(request.Body);
+                
+                if (!body.TryGetValue("id", out var idElement) || !idElement.TryGetInt32(out var id) || id <= 0 ||
+                    !body.TryGetValue("number", out var numberElement) || !numberElement.TryGetInt32(out var number) || number <= 0 ||
+                    !body.TryGetValue("places", out var placesElement) || !placesElement.TryGetInt32(out var places) || places <= 0 ||
+                    !body.TryGetValue("isVip", out var isVipElement) ||
+                    !body.TryGetValue("minOrder", out var minOrderElement) || !minOrderElement.TryGetInt32(out var minOrder))
+                {
+                    return CreateResponse(400, new { message = "Invalid table data" });
+                }
 
-            await _dynamoContext.SaveAsync(table);
-            return CreateResponse(200, new { id = table.Id }); // Динамический ID
+                bool isVip = isVipElement.GetBoolean();
+                
+                var table = new Table
+                {
+                    Id = id.ToString(),
+                    Number = number,
+                    Places = places,
+                    IsVip = isVip,
+                    MinOrder = minOrder
+                };
+                
+                await _dynamoContext.SaveAsync(table);
+                return CreateResponse(200, new { id = id });
+            }
+            catch (Exception ex)
+            {
+                return CreateResponse(400, new { message = $"Error creating table: {ex.Message}" });
+            }
         }
 
         private async Task<APIGatewayProxyResponse> HandleGetTableById(APIGatewayProxyRequest request)
@@ -250,12 +288,12 @@ namespace SimpleLambdaFunction
                 return CreateResponse(400, new { message = "Unauthorized" });
             }
 
-            if (!request.PathParameters.TryGetValue("tableId", out var tableIdStr) || !int.TryParse(tableIdStr, out var tableId))
+            if (!request.PathParameters.TryGetValue("tableId", out var tableIdStr))
             {
                 return CreateResponse(400, new { message = "Invalid tableId" });
             }
 
-            var table = await _dynamoContext.LoadAsync<Table>(tableId);
+            var table = await _dynamoContext.LoadAsync<Table>(tableIdStr);
             if (table == null)
             {
                 return CreateResponse(400, new { message = "Table not found" });
@@ -275,18 +313,49 @@ namespace SimpleLambdaFunction
                 return CreateResponse(400, new { message = "Request body is null" });
             }
 
-            var reservation = JsonSerializer.Deserialize<Reservation>(request.Body);
-            if (reservation.TableNumber <= 0 || string.IsNullOrEmpty(reservation.ClientName) || string.IsNullOrEmpty(reservation.PhoneNumber) ||
-                !DateTime.TryParseExact(reservation.Date, "yyyy-MM-dd", null, System.Globalization.DateTimeStyles.None, out _) ||
-                !DateTime.TryParseExact(reservation.SlotTimeStart, "HH:mm", null, System.Globalization.DateTimeStyles.None, out _) ||
-                !DateTime.TryParseExact(reservation.SlotTimeEnd, "HH:mm", null, System.Globalization.DateTimeStyles.None, out _))
+            try
             {
-                return CreateResponse(400, new { message = "Invalid reservation data" });
+                var body = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(request.Body);
+                
+                if (!body.TryGetValue("tableNumber", out var tableNumberElement) || !tableNumberElement.TryGetInt32(out var tableNumber) || tableNumber <= 0 ||
+                    !body.TryGetValue("clientName", out var clientNameElement) || string.IsNullOrEmpty(clientNameElement.GetString()) ||
+                    !body.TryGetValue("phoneNumber", out var phoneNumberElement) || string.IsNullOrEmpty(phoneNumberElement.GetString()) ||
+                    !body.TryGetValue("date", out var dateElement) || string.IsNullOrEmpty(dateElement.GetString()) ||
+                    !body.TryGetValue("slotTimeStart", out var slotTimeStartElement) || string.IsNullOrEmpty(slotTimeStartElement.GetString()) ||
+                    !body.TryGetValue("slotTimeEnd", out var slotTimeEndElement) || string.IsNullOrEmpty(slotTimeEndElement.GetString()))
+                {
+                    return CreateResponse(400, new { message = "Invalid reservation data" });
+                }
+                
+                var date = dateElement.GetString();
+                var slotTimeStart = slotTimeStartElement.GetString();
+                var slotTimeEnd = slotTimeEndElement.GetString();
+                
+                if (!DateTime.TryParseExact(date, "yyyy-MM-dd", null, System.Globalization.DateTimeStyles.None, out _) ||
+                    !DateTime.TryParseExact(slotTimeStart, "HH:mm", null, System.Globalization.DateTimeStyles.None, out _) ||
+                    !DateTime.TryParseExact(slotTimeEnd, "HH:mm", null, System.Globalization.DateTimeStyles.None, out _))
+                {
+                    return CreateResponse(400, new { message = "Invalid date or time format" });
+                }
+                
+                var reservation = new Reservation
+                {
+                    ReservationId = Guid.NewGuid().ToString(),
+                    TableNumber = tableNumber,
+                    ClientName = clientNameElement.GetString(),
+                    PhoneNumber = phoneNumberElement.GetString(),
+                    Date = date,
+                    SlotTimeStart = slotTimeStart,
+                    SlotTimeEnd = slotTimeEnd
+                };
+                
+                await _dynamoContext.SaveAsync(reservation);
+                return CreateResponse(200, new { reservationId = reservation.ReservationId });
             }
-
-            reservation.ReservationId = Guid.NewGuid().ToString();
-            await _dynamoContext.SaveAsync(reservation);
-            return CreateResponse(200, new { reservationId = reservation.ReservationId });
+            catch (Exception ex)
+            {
+                return CreateResponse(400, new { message = $"Error creating reservation: {ex.Message}" });
+            }
         }
 
         private async Task<APIGatewayProxyResponse> HandleGetReservations(APIGatewayProxyRequest request)
