@@ -12,6 +12,7 @@
             "dynamodb:PutItem",
             "dynamodb:Batch*",
             "dynamodb:DeleteItem",
+            "dynamodb:DescribeTable ",
             "dynamodb:Scan",
             "cognito-idp:DescribeUserPool",
             "cognito-idp:GetUser",
