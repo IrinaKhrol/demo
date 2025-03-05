@@ -1,0 +1,1229 @@
+{
+	"openapi": "3.0.1",
+	"info": {
+		"title": "task12_api",
+		"version": "2025-03-05T13:54:20Z",
+		"externalDocs": {
+			"description": "Find out more about Task12 API",
+			"url": "https://your-docs-url.com"
+		}
+	},
+	"servers": [
+		{
+			"url": "https://8crsi0xksc.execute-api.eu-central-1.amazonaws.com/{basePath}",
+			"variables": {
+				"basePath": {
+					"default": "api"
+				}
+			}
+		}
+	],
+	"paths": {
+		"/reservations": {
+			"get": {
+				"tags": ["Reservations"],
+				"summary": "List All Reservations",
+				"description": "Retrieves a list of all reservations available in the system. Requires authentication via Cognito token.",
+				"responses": {
+					"200": {
+						"description": "Successful retrieval of reservations list",
+						"headers": {
+							"Access-Control-Allow-Origin": {
+								"schema": {
+									"type": "string",
+									"default": "*"
+								}
+							}
+						},
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"reservations": {
+											"type": "array",
+											"items": {
+												"type": "object",
+												"properties": {
+													"tableNumber": {
+														"type": "integer",
+														"description": "Number of the table"
+													},
+													"clientName": {
+														"type": "string",
+														"description": "Name of the client"
+													},
+													"phoneNumber": {
+														"type": "string",
+														"description": "Client's phone number"
+													},
+													"date": {
+														"type": "string",
+														"format": "date",
+														"description": "Reservation date in yyyy-MM-dd format"
+													},
+													"slotTimeStart": {
+														"type": "string",
+														"pattern": "^([0-1][0-9]|2[0-3]):[0-5][0-9]$",
+														"description": "Start time in HH:MM format"
+													},
+													"slotTimeEnd": {
+														"type": "string",
+														"pattern": "^([0-1][0-9]|2[0-3]):[0-5][0-9]$",
+														"description": "End time in HH:MM format"
+													}
+												},
+												"required": [
+													"tableNumber",
+													"clientName",
+													"phoneNumber",
+													"date",
+													"slotTimeStart",
+													"slotTimeEnd"
+												]
+											}
+										}
+									}
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Bad Request - Invalid input or request error. Check request parameters for correctness.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"message": {
+											"type": "string",
+											"example": "There was an error in the request"
+										}
+									}
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Unauthorized - Invalid or missing authentication token. Ensure you are authenticated via Cognito and provide a valid ID token in the Authorization header.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"message": {
+											"type": "string",
+											"example": "Unauthorized"
+										}
+									}
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal Server Error - Server failed to process the request. Contact support if the issue persists.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"message": {
+											"type": "string",
+											"example": "Internal Server Error"
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"security": [
+					{
+						"authorizer": []
+					}
+				],
+				"x-amazon-apigateway-integration": {
+					"httpMethod": "POST",
+					"uri": "arn:aws:apigateway:eu-central-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-central-1:905418349556:function:api_handler/invocations",
+					"responses": {
+						"default": {
+							"statusCode": "200",
+							"responseParameters": {
+								"method.response.header.Access-Control-Allow-Origin": "'*'"
+							}
+						}
+					},
+					"passthroughBehavior": "when_no_match",
+					"type": "aws_proxy"
+				}
+			},
+			"post": {
+				"tags": ["Reservations"],
+				"summary": "Create a Reservation",
+				"description": "Creates a new reservation for a table with specified details. Requires authentication via Cognito token. Returns 400 if the table is not found or a reservation conflict exists.",
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"tableNumber": {
+										"type": "integer",
+										"description": "Number of the table"
+									},
+									"clientName": {
+										"type": "string",
+										"description": "Name of the client"
+									},
+									"phoneNumber": {
+										"type": "string",
+										"description": "Client's phone number"
+									},
+									"date": {
+										"type": "string",
+										"format": "date",
+										"description": "Reservation date in yyyy-MM-dd format"
+									},
+									"slotTimeStart": {
+										"type": "string",
+										"pattern": "^([0-1][0-9]|2[0-3]):[0-5][0-9]$",
+										"description": "Start time in HH:MM format"
+									},
+									"slotTimeEnd": {
+										"type": "string",
+										"pattern": "^([0-1][0-9]|2[0-3]):[0-5][0-9]$",
+										"description": "End time in HH:MM format"
+									}
+								},
+								"required": [
+									"tableNumber",
+									"clientName",
+									"phoneNumber",
+									"date",
+									"slotTimeStart",
+									"slotTimeEnd"
+								]
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": {
+						"description": "Reservation successfully created",
+						"headers": {
+							"Access-Control-Allow-Origin": {
+								"schema": {
+									"type": "string",
+									"default": "*"
+								}
+							}
+						},
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"reservationId": {
+											"type": "string",
+											"format": "uuid",
+											"description": "Unique identifier for the reservation"
+										}
+									}
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Bad Request - Invalid input, table not found, or conflicting reservations. Verify table existence and reservation availability.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"message": {
+											"type": "string",
+											"example": "There was an error in the request. Possible reasons include invalid input, table not found, or conflicting reservations."
+										}
+									}
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Unauthorized - Invalid or missing authentication token. Ensure you are authenticated via Cognito and provide a valid ID token in the Authorization header.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"message": {
+											"type": "string",
+											"example": "Unauthorized"
+										}
+									}
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal Server Error - Server failed to process the request. Contact support if the issue persists.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"message": {
+											"type": "string",
+											"example": "Internal Server Error"
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"security": [
+					{
+						"authorizer": []
+					}
+				],
+				"x-amazon-apigateway-integration": {
+					"httpMethod": "POST",
+					"uri": "arn:aws:apigateway:eu-central-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-central-1:905418349556:function:api_handler/invocations",
+					"responses": {
+						"default": {
+							"statusCode": "200",
+							"responseParameters": {
+								"method.response.header.Access-Control-Allow-Origin": "'*'"
+							}
+						}
+					},
+					"passthroughBehavior": "when_no_match",
+					"type": "aws_proxy"
+				}
+			},
+			"options": {
+				"tags": ["Reservations"],
+				"responses": {
+					"200": {
+						"description": "200 response for CORS preflight",
+						"headers": {
+							"Access-Control-Allow-Origin": {
+								"schema": {
+									"type": "string",
+									"default": "https://api-ui-hoster.s3-website.eu-central-1.amazonaws.com"
+								}
+							},
+							"Access-Control-Allow-Methods": {
+								"schema": {
+									"type": "string",
+									"default": "GET, POST, OPTIONS"
+								}
+							},
+							"Access-Control-Allow-Headers": {
+								"schema": {
+									"type": "string",
+									"default": "Content-Type, Authorization"
+								}
+							}
+						},
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"title": "Empty Schema"
+								}
+							}
+						}
+					}
+				},
+				"x-amazon-apigateway-integration": {
+					"responses": {
+						"default": {
+							"statusCode": "200",
+							"responseParameters": {
+								"method.response.header.Access-Control-Allow-Methods": "'GET, POST, OPTIONS'",
+								"method.response.header.Access-Control-Allow-Headers": "'Content-Type, Authorization'",
+								"method.response.header.Access-Control-Allow-Origin": "'https://api-ui-hoster.s3-website.eu-central-1.amazonaws.com'"
+							}
+						}
+					},
+					"requestTemplates": {
+						"application/json": "{\"statusCode\": 200}"
+					},
+					"passthroughBehavior": "when_no_match",
+					"type": "mock"
+				}
+			}
+		},
+		"/tables": {
+			"get": {
+				"tags": ["Tables"],
+				"summary": "List All Tables",
+				"description": "Retrieves a list of all tables available for booking. Requires authentication via Cognito token.",
+				"responses": {
+					"200": {
+						"description": "Successful retrieval of tables list",
+						"headers": {
+							"Access-Control-Allow-Origin": {
+								"schema": {
+									"type": "string",
+									"default": "https://api-ui-hoster.s3-website.eu-central-1.amazonaws.com"
+								}
+							}
+						},
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"tables": {
+											"type": "array",
+											"items": {
+												"type": "object",
+												"properties": {
+													"id": {
+														"type": "integer",
+														"description": "Table ID",
+														"example": 1
+													},
+													"number": {
+														"type": "integer",
+														"description": "Table number",
+														"example": 5
+													},
+													"places": {
+														"type": "integer",
+														"description": "Number of seats at the table",
+														"example": 4
+													},
+													"isVip": {
+														"type": "boolean",
+														"description": "Indicates if the table is in the VIP hall",
+														"example": false
+													},
+													"minOrder": {
+														"type": "integer",
+														"description": "Minimum order required (optional)",
+														"example": 100
+													}
+												},
+												"required": ["id", "number", "places", "isVip"]
+											}
+										}
+									}
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Bad Request - Invalid input or request error. Check request parameters for correctness.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"message": {
+											"type": "string",
+											"example": "There was an error in the request"
+										}
+									}
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Unauthorized - Invalid or missing authentication token. Ensure you are authenticated via Cognito and provide a valid ID token in the Authorization header.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"message": {
+											"type": "string",
+											"example": "Unauthorized"
+										}
+									}
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal Server Error - Server failed to process the request. Contact support if the issue persists.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"message": {
+											"type": "string",
+											"example": "Internal Server Error"
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"security": [
+					{
+						"authorizer": []
+					}
+				],
+				"x-amazon-apigateway-integration": {
+					"httpMethod": "POST",
+					"uri": "arn:aws:apigateway:eu-central-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-central-1:905418349556:function:api_handler/invocations",
+					"responses": {
+						"default": {
+							"statusCode": "200",
+							"responseParameters": {
+								"method.response.header.Access-Control-Allow-Origin": "'https://api-ui-hoster.s3-website.eu-central-1.amazonaws.com'"
+							}
+						}
+					},
+					"passthroughBehavior": "when_no_match",
+					"type": "aws_proxy"
+				}
+			},
+			"post": {
+				"tags": ["Tables"],
+				"summary": "Create a Table",
+				"description": "Creates a new table with specified details. Requires authentication via Cognito token. Returns 400 if input is invalid.",
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"id": {
+										"type": "integer",
+										"description": "Table ID",
+										"example": 1
+									},
+									"number": {
+										"type": "integer",
+										"description": "Table number",
+										"example": 5
+									},
+									"places": {
+										"type": "integer",
+										"description": "Number of seats at the table",
+										"example": 4
+									},
+									"isVip": {
+										"type": "boolean",
+										"description": "Indicates if the table is in the VIP hall",
+										"example": false
+									},
+									"minOrder": {
+										"type": "integer",
+										"description": "Minimum order required (optional)",
+										"example": 100
+									}
+								},
+								"required": ["id", "number", "places", "isVip"]
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": {
+						"description": "Table successfully created",
+						"headers": {
+							"Access-Control-Allow-Origin": {
+								"schema": {
+									"type": "string",
+									"default": "https://api-ui-hoster.s3-website.eu-central-1.amazonaws.com"
+								}
+							}
+						},
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"id": {
+											"type": "integer",
+											"description": "ID of the created table",
+											"example": 1
+										}
+									}
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Bad Request - Invalid input or request error. Verify table details for correctness.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"message": {
+											"type": "string",
+											"example": "There was an error in the request"
+										}
+									}
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Unauthorized - Invalid or missing authentication token. Ensure you are authenticated via Cognito and provide a valid ID token in the Authorization header.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"message": {
+											"type": "string",
+											"example": "Unauthorized"
+										}
+									}
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal Server Error - Server failed to process the request. Contact support if the issue persists.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"message": {
+											"type": "string",
+											"example": "Internal Server Error"
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"security": [
+					{
+						"authorizer": []
+					}
+				],
+				"x-amazon-apigateway-integration": {
+					"httpMethod": "POST",
+					"uri": "arn:aws:apigateway:eu-central-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-central-1:905418349556:function:api_handler/invocations",
+					"responses": {
+						"default": {
+							"statusCode": "200",
+							"responseParameters": {
+								"method.response.header.Access-Control-Allow-Origin": "'https://api-ui-hoster.s3-website.eu-central-1.amazonaws.com'"
+							}
+						}
+					},
+					"passthroughBehavior": "when_no_match",
+					"type": "aws_proxy"
+				}
+			},
+			"options": {
+				"tags": ["Tables"],
+				"responses": {
+					"200": {
+						"description": "200 response for CORS preflight",
+						"headers": {
+							"Access-Control-Allow-Origin": {
+								"schema": {
+									"type": "string",
+									"default": "https://api-ui-hoster.s3-website.eu-central-1.amazonaws.com"
+								}
+							},
+							"Access-Control-Allow-Methods": {
+								"schema": {
+									"type": "string",
+									"default": "GET, POST, OPTIONS"
+								}
+							},
+							"Access-Control-Allow-Headers": {
+								"schema": {
+									"type": "string",
+									"default": "Content-Type, Authorization"
+								}
+							}
+						},
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"title": "Empty Schema"
+								}
+							}
+						}
+					}
+				},
+				"x-amazon-apigateway-integration": {
+					"responses": {
+						"default": {
+							"statusCode": "200",
+							"responseParameters": {
+								"method.response.header.Access-Control-Allow-Methods": "'GET, POST, OPTIONS'",
+								"method.response.header.Access-Control-Allow-Headers": "'Content-Type, Authorization'",
+								"method.response.header.Access-Control-Allow-Origin": "'https://api-ui-hoster.s3-website.eu-central-1.amazonaws.com'"
+							}
+						}
+					},
+					"requestTemplates": {
+						"application/json": "{\"statusCode\": 200}"
+					},
+					"passthroughBehavior": "when_no_match",
+					"type": "mock"
+				}
+			}
+		},
+		"/signin": {
+			"post": {
+				"tags": ["Authentication"],
+				"summary": "User Sign-In",
+				"description": "Authenticates a user and returns an ID token for API access. No authentication required for this endpoint.",
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"email": {
+										"type": "string",
+										"format": "email",
+										"description": "User's email address",
+										"example": "user@example.com"
+									},
+									"password": {
+										"type": "string",
+										"pattern": "^(?=.*[A-Za-z0-9])(?=.*[$%^*-_])[A-Za-z0-9$%^*-_]{12,}$",
+										"description": "Password (12+ chars, alphanumeric + $%^*-_)",
+										"example": "TestPass123$%^"
+									}
+								},
+								"required": ["email", "password"]
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": {
+						"description": "Successful sign-in",
+						"headers": {
+							"Access-Control-Allow-Origin": {
+								"schema": {
+									"type": "string",
+									"default": "https://api-ui-hoster.s3-website.eu-central-1.amazonaws.com"
+								}
+							}
+						},
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"accessToken": {
+											"type": "string",
+											"description": "ID token for authentication",
+											"example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+										}
+									}
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Bad Request - Invalid email or password. Verify credentials and try again.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"message": {
+											"type": "string",
+											"example": "Invalid email or password"
+										}
+									}
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal Server Error - Server failed to process the request. Contact support if the issue persists.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"message": {
+											"type": "string",
+											"example": "Internal Server Error"
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"x-amazon-apigateway-integration": {
+					"httpMethod": "POST",
+					"uri": "arn:aws:apigateway:eu-central-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-central-1:905418349556:function:api_handler/invocations",
+					"responses": {
+						"default": {
+							"statusCode": "200",
+							"responseParameters": {
+								"method.response.header.Access-Control-Allow-Origin": "'https://api-ui-hoster.s3-website.eu-central-1.amazonaws.com'"
+							}
+						}
+					},
+					"passthroughBehavior": "when_no_match",
+					"type": "aws_proxy"
+				}
+			},
+			"options": {
+				"tags": ["Authentication"],
+				"responses": {
+					"200": {
+						"description": "200 response for CORS preflight",
+						"headers": {
+							"Access-Control-Allow-Origin": {
+								"schema": {
+									"type": "string",
+									"default": "https://api-ui-hoster.s3-website.eu-central-1.amazonaws.com"
+								}
+							},
+							"Access-Control-Allow-Methods": {
+								"schema": {
+									"type": "string",
+									"default": "POST, OPTIONS"
+								}
+							},
+							"Access-Control-Allow-Headers": {
+								"schema": {
+									"type": "string",
+									"default": "Content-Type, Authorization"
+								}
+							}
+						},
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"title": "Empty Schema"
+								}
+							}
+						}
+					}
+				},
+				"x-amazon-apigateway-integration": {
+					"responses": {
+						"default": {
+							"statusCode": "200",
+							"responseParameters": {
+								"method.response.header.Access-Control-Allow-Methods": "'POST, OPTIONS'",
+								"method.response.header.Access-Control-Allow-Headers": "'Content-Type, Authorization'",
+								"method.response.header.Access-Control-Allow-Origin": "'https://api-ui-hoster.s3-website.eu-central-1.amazonaws.com'"
+							}
+						}
+					},
+					"requestTemplates": {
+						"application/json": "{\"statusCode\": 200}"
+					},
+					"passthroughBehavior": "when_no_match",
+					"type": "mock"
+				}
+			}
+		},
+		"/signup": {
+			"post": {
+				"tags": ["Authentication"],
+				"summary": "User Registration",
+				"description": "Registers a new user with email, password, first name, and last name using Amazon Cognito. Returns 200 on success, 400 for invalid input, or 500 for server errors. No authentication required for this endpoint.",
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"firstName": {
+										"type": "string",
+										"description": "User's first name",
+										"example": "John"
+									},
+									"lastName": {
+										"type": "string",
+										"description": "User's last name",
+										"example": "Doe"
+									},
+									"email": {
+										"type": "string",
+										"format": "email",
+										"description": "User's email address",
+										"example": "john.doe@example.com"
+									},
+									"password": {
+										"type": "string",
+										"pattern": "^(?=.*[A-Za-z0-9])(?=.*[$%^*-_])[A-Za-z0-9$%^*-_]{12,}$",
+										"description": "Password (12+ chars, alphanumeric + $%^*-_)",
+										"example": "TestPass123$%^"
+									}
+								},
+								"required": ["firstName", "lastName", "email", "password"]
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": {
+						"description": "Successful sign-up",
+						"headers": {
+							"Access-Control-Allow-Origin": {
+								"schema": {
+									"type": "string",
+									"default": "https://api-ui-hoster.s3-website.eu-central-1.amazonaws.com"
+								}
+							}
+						},
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"message": {
+											"type": "string",
+											"example": "OK"
+										}
+									}
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Bad Request - Invalid input or request error. Verify email format, password complexity, and required fields.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"message": {
+											"type": "string",
+											"example": "Invalid input"
+										}
+									}
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal Server Error - Server failed to process the request. Contact support if the issue persists.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"message": {
+											"type": "string",
+											"example": "Internal Server Error"
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"x-amazon-apigateway-integration": {
+					"httpMethod": "POST",
+					"uri": "arn:aws:apigateway:eu-central-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-central-1:905418349556:function:api_handler/invocations",
+					"responses": {
+						"default": {
+							"statusCode": "200",
+							"responseParameters": {
+								"method.response.header.Access-Control-Allow-Origin": "'https://api-ui-hoster.s3-website.eu-central-1.amazonaws.com'"
+							}
+						}
+					},
+					"passthroughBehavior": "when_no_match",
+					"type": "aws_proxy"
+				}
+			},
+			"options": {
+				"tags": ["Authentication"],
+				"responses": {
+					"200": {
+						"description": "200 response for CORS preflight",
+						"headers": {
+							"Access-Control-Allow-Origin": {
+								"schema": {
+									"type": "string",
+									"default": "https://api-ui-hoster.s3-website.eu-central-1.amazonaws.com"
+								}
+							},
+							"Access-Control-Allow-Methods": {
+								"schema": {
+									"type": "string",
+									"default": "POST, OPTIONS"
+								}
+							},
+							"Access-Control-Allow-Headers": {
+								"schema": {
+									"type": "string",
+									"default": "Content-Type, Authorization"
+								}
+							}
+						},
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"title": "Empty Schema"
+								}
+							}
+						}
+					}
+				},
+				"x-amazon-apigateway-integration": {
+					"responses": {
+						"default": {
+							"statusCode": "200",
+							"responseParameters": {
+								"method.response.header.Access-Control-Allow-Methods": "'POST, OPTIONS'",
+								"method.response.header.Access-Control-Allow-Headers": "'Content-Type, Authorization'",
+								"method.response.header.Access-Control-Allow-Origin": "'https://api-ui-hoster.s3-website.eu-central-1.amazonaws.com'"
+							}
+						}
+					},
+					"requestTemplates": {
+						"application/json": "{\"statusCode\": 200}"
+					},
+					"passthroughBehavior": "when_no_match",
+					"type": "mock"
+				}
+			}
+		},
+		"/tables/{tableId}": {
+			"get": {
+				"tags": ["Tables"],
+				"summary": "Get Table by ID",
+				"description": "Retrieves details of a specific table by its ID. Requires authentication via Cognito token.",
+				"parameters": [
+					{
+						"name": "tableId",
+						"in": "path",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"example": "1"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Successful retrieval of table details",
+						"headers": {
+							"Access-Control-Allow-Origin": {
+								"schema": {
+									"type": "string",
+									"default": "https://api-ui-hoster.s3-website.eu-central-1.amazonaws.com"
+								}
+							}
+						},
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"id": {
+											"type": "integer",
+											"description": "Table ID",
+											"example": 1
+										},
+										"number": {
+											"type": "integer",
+											"description": "Table number",
+											"example": 5
+										},
+										"places": {
+											"type": "integer",
+											"description": "Number of seats at the table",
+											"example": 4
+										},
+										"isVip": {
+											"type": "boolean",
+											"description": "Indicates if the table is in the VIP hall",
+											"example": false
+										},
+										"minOrder": {
+											"type": "integer",
+											"description": "Minimum order required (optional)",
+											"example": 100
+										}
+									},
+									"required": ["id", "number", "places", "isVip"]
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Bad Request - Invalid table ID or request error. Verify the tableId parameter.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"message": {
+											"type": "string",
+											"example": "Table not found"
+										}
+									}
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Unauthorized - Invalid or missing authentication token. Ensure you are authenticated via Cognito and provide a valid ID token in the Authorization header.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"message": {
+											"type": "string",
+											"example": "Unauthorized"
+										}
+									}
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal Server Error - Server failed to process the request. Contact support if the issue persists.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"message": {
+											"type": "string",
+											"example": "Internal Server Error"
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"security": [
+					{
+						"authorizer": []
+					}
+				],
+				"x-amazon-apigateway-integration": {
+					"httpMethod": "POST",
+					"uri": "arn:aws:apigateway:eu-central-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-central-1:905418349556:function:api_handler/invocations",
+					"responses": {
+						"default": {
+							"statusCode": "200",
+							"responseParameters": {
+								"method.response.header.Access-Control-Allow-Origin": "'https://api-ui-hoster.s3-website.eu-central-1.amazonaws.com'"
+							}
+						}
+					},
+					"passthroughBehavior": "when_no_match",
+					"type": "aws_proxy"
+				}
+			},
+			"options": {
+				"tags": ["Tables"],
+				"parameters": [
+					{
+						"name": "tableId",
+						"in": "path",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"example": "1"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "200 response for CORS preflight",
+						"headers": {
+							"Access-Control-Allow-Origin": {
+								"schema": {
+									"type": "string",
+									"default": "https://api-ui-hoster.s3-website.eu-central-1.amazonaws.com"
+								}
+							},
+							"Access-Control-Allow-Methods": {
+								"schema": {
+									"type": "string",
+									"default": "GET, OPTIONS"
+								}
+							},
+							"Access-Control-Allow-Headers": {
+								"schema": {
+									"type": "string",
+									"default": "Content-Type, Authorization"
+								}
+							}
+						},
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"title": "Empty Schema"
+								}
+							}
+						}
+					}
+				},
+				"x-amazon-apigateway-integration": {
+					"responses": {
+						"default": {
+							"statusCode": "200",
+							"responseParameters": {
+								"method.response.header.Access-Control-Allow-Methods": "'GET, OPTIONS'",
+								"method.response.header.Access-Control-Allow-Headers": "'Content-Type, Authorization'",
+								"method.response.header.Access-Control-Allow-Origin": "'https://api-ui-hoster.s3-website.eu-central-1.amazonaws.com'"
+							}
+						}
+					},
+					"requestTemplates": {
+						"application/json": "{\"statusCode\": 200}"
+					},
+					"passthroughBehavior": "when_no_match",
+					"type": "mock"
+				}
+			}
+		}
+	},
+	"components": {
+		"schemas": {
+			"Empty": {
+				"title": "Empty Schema",
+				"type": "object"
+			}
+		},
+		"securitySchemes": {
+			"authorizer": {
+				"type": "apiKey",
+				"name": "Authorization",
+				"in": "header",
+				"x-amazon-apigateway-authtype": "cognito_user_pools",
+				"x-amazon-apigateway-authorizer": {
+					"type": "cognito_user_pools",
+					"x-syndicate-cognito-userpool-names": ["simple-booking-userpool"]
+				}
+			}
+		}
+	},
+	"x-syndicate-openapi-tags": {
+		"run_id": "SEP_JAP_7",
+		"run_type": "stm",
+		"type": "user",
+		"user_id": "e90b8721"
+	}
+}
